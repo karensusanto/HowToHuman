@@ -7,6 +7,6 @@
 import Foundation
 
 struct Player: Codable {
-    let id: Int
+    let id: UUID
     let name: String
 }
