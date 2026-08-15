@@ -6,7 +6,7 @@
 //
 import Foundation
 
-struct Player: Codable {
+struct Player: Identifiable, Codable, Sendable, Hashable {
     let id: UUID
     let name: String
 }

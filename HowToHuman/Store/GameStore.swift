@@ -9,7 +9,6 @@ import Combine
 import Foundation
 import SwiftUI
 import MultipeerConnectivity
-import CouchbaseLiteSwift
 
 enum AppState {
     case home
@@ -30,7 +29,7 @@ enum AppState {
     //    case transitionToVote
 }
 
-enum GamePhase {
+enum GamePhase: String, Codable {
     //    case none
     case askHuman
     case answerAlien
@@ -80,10 +79,26 @@ final class GameStore: ObservableObject {
         case .connected:
             print("🟢 \(peerID.displayName) joined the lobby!")
             // TODO: Add this player to the current Room
+            let newPlayer = Player(id: UUID(), name: peerID.displayName)
+            
+            // Safely append them to the room if the room exists
+            if currRoom != nil {
+                if !currRoom!.players.contains(where: { $0.name == newPlayer.name }) {
+                    currRoom?.players.append(newPlayer)
+                }
+                
+                // HOST ACTION: Distribute the authoritative room state to all clients
+                transport.broadcast(message: .stateSync(currRoom!))
+            }
             
         case .notConnected:
             print("🔴 \(peerID.displayName) disconnected.")
             // TODO: Remove this player or trigger the graceful exit
+            
+            // Remove the player from the room array
+            currRoom?.players.removeAll(where: { $0.name == peerID.displayName })
+            
+            // If the person who disconnected was the host, we'd trigger the graceful exit here
             
         case .connecting:
             print("🟡 \(peerID.displayName) is connecting...")
@@ -94,7 +109,41 @@ final class GameStore: ObservableObject {
     }
     
     private func handleIncomingMessage(_ message: GameMessage, from peerID: MCPeerID) {
-        // TODO: Switch on the GameMessage enum and update our @Published variables
-        print("Received message from \(peerID.displayName): \(message)")
+        switch message {
+        case .stateSync(let authoritativeRoom):
+            print("📥 Received canonical room state from Host.")
+            // Overwrite the client's nil state with the true game state
+            self.currRoom = authoritativeRoom
+            
+        default:
+            print("Received unhandled message from \(peerID.displayName): \(message)")
+        }
+    }
+    
+    // MARK: - Network Triggers
+    
+    func hostGame() {
+        // 1. Create a placeholder room so the UI has something to display
+        let hostPlayer = Player(id: UUID(), name: UIDevice.current.name)
+        currRoom = Room(
+            id: UUID(),
+            name: "Test Lobby",
+            hostID: hostPlayer.id,
+            players: [hostPlayer] // Add the host to the room immediately
+        )
+        
+        // 2. Start broadcasting
+        transport.startHosting()
+        print("Started broadcasting as Host...")
+    }
+    
+    func joinGame() {
+        transport.startBrowsing()
+        print("Scanning for Hosts...")
+    }
+    
+    func leaveGame() {
+        transport.stopNetworking()
+        currRoom = nil
     }
 }

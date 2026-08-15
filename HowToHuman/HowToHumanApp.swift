@@ -11,7 +11,11 @@ import SwiftUI
 struct HowToHumanApp: App {
     var body: some Scene {
         WindowGroup {
-            RootView().preferredColorScheme(.dark)
+            //Proper RootView
+            //RootView().preferredColorScheme(.dark)
+            
+            //Test RootView
+            NetworkTestView().environmentObject(GameStore())
         }
     }
 }
