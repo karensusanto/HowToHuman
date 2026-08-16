@@ -16,7 +16,7 @@ enum GameMessage: Codable {
     case submitQuestion(String)
     case submitInstruction(String)
     case submitNarration(String)
-    case reactionSent(Int)
+    case reactionSent(String)
 }
 
 final class MultipeerTransport: NSObject, ObservableObject {

@@ -50,6 +50,9 @@ final class GameStore: ObservableObject {
     //    @Published var isMigratingHost: Bool = false
     @Published var currRoom: Room?
     
+    // A high-speed pipeline exclusively for transient UI animations
+    let incomingReactions = PassthroughSubject<String, Never>()
+    
     init() {
         // Initialize the transport with a temporary device name
         self.transport = MultipeerTransport(displayName: UIDevice.current.name)
@@ -115,6 +118,10 @@ final class GameStore: ObservableObject {
             // Overwrite the client's nil state with the true game state
             self.currRoom = authoritativeRoom
             
+        case .reactionSent(let emoji):
+            // Push the incoming emoji directly to the UI's animation stream
+            self.incomingReactions.send(emoji)
+            
         default:
             print("Received unhandled message from \(peerID.displayName): \(message)")
         }
@@ -145,5 +152,12 @@ final class GameStore: ObservableObject {
     func leaveGame() {
         transport.stopNetworking()
         currRoom = nil
+    }
+    
+    func sendReaction(_ emoji: String) {
+        // We set 'reliably: false' (UDP mode) because missing a single dropped
+        // confetti frame is perfectly fine, and it keeps network latency
+        // insanely low so players can mash the button.
+        transport.broadcast(message: .reactionSent(emoji), reliably: false)
     }
 }
