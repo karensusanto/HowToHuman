@@ -4,8 +4,8 @@
 <dict>
 	<key>NSBonjourServices</key>
 	<array>
-		<string>_howtoaliens._tcp</string>
-		<string>_howtoaliens._udp</string>
+		<string>_howtohuman._tcp</string>
+		<string>_howtohuman._udp</string>
 	</array>
 </dict>
 </plist>

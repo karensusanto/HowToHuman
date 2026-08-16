@@ -20,7 +20,7 @@ enum GameMessage: Codable {
 }
 
 final class MultipeerTransport: NSObject, ObservableObject {
-    private let serviceType = "howtoaliens"
+    private let serviceType = "howtohuman"
     
     private let myPeerId: MCPeerID
     private let session: MCSession
