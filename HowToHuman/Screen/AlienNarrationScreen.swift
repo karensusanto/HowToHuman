@@ -12,7 +12,7 @@ struct AlienNarrationScreen: View {
 
     @State private var currentIndex: Int = 0
     @State private var narrations: [String]
-    @State private var expandedIndices: Set<Int> = []
+    @State private var showAllSteps: Bool = false
 
     private let stars: [StarDot] = (0..<25).map { _ in
         StarDot(
@@ -66,15 +66,16 @@ struct AlienNarrationScreen: View {
                     .padding(.top, 16)
 
                 stepCarousel
-
+                   
                 pageDots
+
 
                 Text("How did it go?")
                     .font(.system(size: 17, weight: .bold, design: .rounded))
                     .foregroundColor(.black)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 20)
-                    .padding(.top, 28)
+                    .padding(.top, 10)
 
                 narrationField
                     .padding(.horizontal, 20)
@@ -124,12 +125,16 @@ struct AlienNarrationScreen: View {
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
         .frame(height: 150)
+        .onTapGesture {
+            showAllSteps = true
+        }
+        .sheet(isPresented: $showAllSteps) {
+            allStepsSheet
+        }
     }
 
     private func stepCard(index: Int) -> some View {
-        let isExpanded = expandedIndices.contains(index)
-
-        return VStack(spacing: 10) {
+        VStack(spacing: 10) {
             Text("Step \(index + 1)")
                 .font(.system(size: 14, weight: .bold, design: .rounded))
                 .foregroundColor(.black)
@@ -138,7 +143,7 @@ struct AlienNarrationScreen: View {
                 .font(.system(size: 24, weight: .bold, design: .rounded))
                 .foregroundColor(.black)
                 .multilineTextAlignment(.center)
-                .lineLimit(isExpanded ? nil : 2)
+                .lineLimit(2)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 20)
@@ -152,13 +157,61 @@ struct AlienNarrationScreen: View {
                 .stroke(Color.black, lineWidth: 1.5)
         )
         .contentShape(Rectangle())
-        .onTapGesture {
-            if isExpanded {
-                expandedIndices.remove(index)
-            } else {
-                expandedIndices.insert(index)
+    }
+
+    private var allStepsSheet: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("All steps")
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundColor(.black)
+                Spacer()
+                Button {
+                    showAllSteps = false
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 24))
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding(20)
+
+            ScrollView {
+                VStack(spacing: 12) {
+                    ForEach(steps.indices, id: \.self) { index in
+                        HStack(alignment: .top, spacing: 12) {
+                            Text("\(index + 1)")
+                                .font(.system(size: 15, weight: .bold, design: .rounded))
+                                .foregroundColor(.black)
+                                .frame(width: 28, height: 28)
+                                .background(Circle().fill(Color(white: 0.9)))
+
+                            Text(steps[index])
+                                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                .foregroundColor(.black)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(Color.white)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(Color.black.opacity(0.15), lineWidth: 1)
+                        )
+                        .onTapGesture {
+                            currentIndex = index
+                            showAllSteps = false
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
             }
         }
+        .presentationDetents([.medium, .large])
     }
 
     private var pageDots: some View {
