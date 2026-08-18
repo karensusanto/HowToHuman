@@ -51,41 +51,59 @@ struct TransitionScreen: View {
     @State private var visibleRows: [Bool] = [false, false, false, false, false, false, false, false, false, false]
     @State private var animationWorkItems: [DispatchWorkItem] = []
     var body: some View {
-        VStack{
-            Spacer()
-            let instruction = instructions[store.phase]!
-            ForEach(0..<instruction.count, id: \.self){ index in
-                let attributedString = try? AttributedString(markdown: instruction[index].0)
-                Text(attributedString ?? "")
-                    .font(.system(size: instruction[index].1))
-                    .opacity(visibleRows[index] ? 1.0 : 0.0)
-                    .multilineTextAlignment(.center)
-                    .animation(.easeIn(duration: 0.6), value: visibleRows[index])
-                    .tracking(1.5)
-                
-            }
-            Spacer()
-            PrimaryButton(title: "CONTINUE"){
-                switch store.phase {
-                case .askHuman:
-                    store.state = .askHuman
-                case .answerAlien:
-                    store.state = .answerAlien
-                case .narrateExperience:
-                    store.state = .narrateExperience
-                case .reviewExperience:
-                    store.state = .reviewExperience
-                case .voting:
-                    store.state = .voting
+        ZStack{
+            VStack{
+                HStack{
+                    ExitRoomButton()
+                    Spacer()
                 }
+                Spacer()
+                let instruction = instructions[store.phase]!
+                ForEach(0..<instruction.count, id: \.self){ index in
+                    let attributedString = try? AttributedString(markdown: instruction[index].0)
+                    Text(attributedString ?? "")
+                        .font(.system(size: instruction[index].1))
+                        .opacity(visibleRows[index] ? 1.0 : 0.0)
+                        .multilineTextAlignment(.center)
+                        .animation(.easeIn(duration: 0.6), value: visibleRows[index])
+                        .tracking(1.5)
+                    
+                }
+                Spacer()
+                
+                if store.currRoom?.hostID == store.networkManager.myPeerId {
+                    PrimaryButton(title: "CONTINUE"){
+                        switch store.phase {
+                        case .askHuman:
+                            store.state = .askHuman
+                        case .answerAlien:
+                            store.state = .answerAlien
+                        case .narrateExperience:
+                            store.state = .narrateExperience
+                        case .reviewExperience:
+                            store.state = .reviewExperience
+                        case .voting:
+                            store.state = .voting
+                        case .none:
+                            store.state = .lobby
+                        }
+                        
+                        store.sendDataToPlayers()
+                    }
+                }
+                
+            }.padding()
+                .onAppear{
+                    startSequencedAnimation()
+                }
+                .onTapGesture {
+                    skipAnimation()
+                }
+            
+            if store.showExitRoomPopUp == true{
+                ExitRoomPopUp(isPresented: $store.showExitRoomPopUp)
             }
-        }.padding()
-            .onAppear{
-                startSequencedAnimation()
-            }
-            .onTapGesture {
-                skipAnimation()
-            }
+        }
     }
     
     private func startSequencedAnimation() {
