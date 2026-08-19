@@ -5,6 +5,7 @@
 //  Created by Karen Regina Susanto on 13/08/26.
 //
 import Foundation
+import Network
 
 nonisolated enum TimerMode: Int, CaseIterable, Identifiable, Codable, Sendable {
     case noTime, fast, normal, slow
@@ -57,6 +58,7 @@ struct Room: Identifiable, Codable, Sendable {
     var players: [Player]
     var timerMode: TimerMode
     var maxPlayers: Int = 8
+    var isPlaying: Bool = false
 
     init(id: UUID = UUID(), name: String, hostID: UUID, players: [Player], timerMode: TimerMode = .normal) {
         self.id = id
@@ -67,4 +69,30 @@ struct Room: Identifiable, Codable, Sendable {
     }
 
     var isFull: Bool { players.count >= maxPlayers }
+    
+    mutating func changeHost(){
+        removePlayer(id: hostID)
+        let newHostUUID = players.first!.id
+        self.hostID = newHostUUID
+        self.roomName = "\(players.first!.name)'s Room"
+    }
+    
+    mutating func removePlayer(id: UUID){
+        players.removeAll(where: { $0.id == id })
+    }
+}
+
+
+struct DiscoveredRoom: Identifiable{
+    let id: UUID
+    let roomName: String
+    let roomEndpoint: NWEndpoint
+    let hostID: UUID
+    
+    init(id: UUID, roomName: String, roomEndpoint: NWEndpoint, hostID: UUID) {
+        self.id = id
+        self.roomName = roomName
+        self.roomEndpoint = roomEndpoint
+        self.hostID = hostID
+    }
 }

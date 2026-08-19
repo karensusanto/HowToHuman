@@ -18,3 +18,7 @@ extension Player {
         Image(avatar)
     }
 }
+
+struct LeavingPlayer: Codable{
+    let id: UUID
+}

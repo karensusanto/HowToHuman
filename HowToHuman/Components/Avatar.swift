@@ -8,7 +8,7 @@
 import SwiftUI
 
 class AlienAvatar{
-    static var allCases: [String] = ["alien-placeholder", "alien-placeholder", "alien-placeholder"]
+    static var allCases: [String] = ["alien-placeholder", "alien-placeholder-2"]
 }
 
 struct Avatar: View {
@@ -43,13 +43,14 @@ struct Avatar: View {
 
 struct AvatarGridView: View {
     @Binding var selectedAvatar: String
+    @State var listOfAvatars: [String] = AlienAvatar.allCases
     let columns = [
         GridItem(.adaptive(minimum: 65))
     ]
     
     var body: some View {
         LazyVGrid(columns: columns, spacing: 20) {
-            ForEach(AlienAvatar.allCases, id: \.self){avatar in
+            ForEach(listOfAvatars, id: \.self){avatar in
                 Button{selectedAvatar = avatar}
                 label:{
                     Avatar(avatar: avatar, selected: selectedAvatar == avatar)

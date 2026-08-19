@@ -24,6 +24,22 @@ struct BackButton: View {
         )
     }
 }
+struct ExitRoomButton: View {
+    @EnvironmentObject var store: GameStore
+    
+    var body: some View {
+        Button{ store.showExitRoomPopUp = true }label:{
+            Image(systemName: "door.left.hand.open")
+                .foregroundStyle(Color.white)
+                .padding()
+        }
+        .clipShape(Circle())
+//        .overlay(
+//            Circle()
+//                .stroke(Color.white.opacity(0.6), lineWidth: 1)
+//        )
+    }
+}
 
 struct PrimaryButton: View {
     let title: String
@@ -50,6 +66,11 @@ struct PrimaryButton: View {
         .scaleEffect(isPressed ? 0.97 : 1.0)
         .opacity(isDisabled ? 0.6 : 1.0)
         .disabled(isDisabled)
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in isPressed = true }
+                .onEnded { _ in isPressed = false }
+        )
         .animation(.easeOut(duration: 0.15), value: isPressed)
     }
 }
@@ -81,6 +102,43 @@ struct SecondaryButton: View {
         .scaleEffect(isPressed ? 0.97 : 1.0)
         .opacity(isDisabled ? 0.6 : 1.0)
         .disabled(isDisabled)
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in isPressed = true }
+                .onEnded { _ in isPressed = false }
+        )
+        .animation(.easeOut(duration: 0.15), value: isPressed)
+    }
+}
+
+
+struct OpenSettingButton: View {
+//    var isLoading: Bool = false
+    var action: () -> Void
+    
+    @State private var isPressed = false
+    
+    var body: some View {
+        Button {
+            action()
+        } label: {
+            Image(systemName: "gear")
+            
+        }
+        .frame(maxWidth: 54)
+        .frame(height: 54)
+        .foregroundStyle(Color.white)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Color.gray, lineWidth: 1.5)
+                .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.black.opacity(0.6)))
+        )
+        .scaleEffect(isPressed ? 0.97 : 1.0)
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in isPressed = true }
+                .onEnded { _ in isPressed = false }
+        )
         .animation(.easeOut(duration: 0.15), value: isPressed)
     }
 }
