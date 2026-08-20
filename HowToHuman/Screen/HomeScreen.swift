@@ -15,8 +15,15 @@ struct HomeScreen: View {
             Color.clear.ignoresSafeArea()
             VStack(spacing: 100) {
                 
-                
-                Image("HTHTitleText").resizable().scaledToFit()
+                ZStack{
+                    Image("HTHTitleText").resizable().scaledToFit()
+                    HStack{
+                        Spacer()
+                        Image("spaceship-pink").resizable().scaledToFit()
+                            .frame(width: 115)
+                            .rotationEffect(.degrees(24))
+                    }.offset(x: 25, y: -110)
+                }
                 
                 VStack(spacing: 20){
                     
@@ -24,8 +31,11 @@ struct HomeScreen: View {
                         store.state = .lobbySearch
                     }
                     
-                    SecondaryButton(title: "How To Play"){
+                    Button{
                         store.state = .howToPlay
+                    }label: {
+                        HTHText(title: "How to Play?", size: 20)
+                            .underline(true, pattern: .solid, color: .white)
                     }
                 }
                 .padding(.horizontal, 20)

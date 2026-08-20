@@ -7,24 +7,16 @@
 
 import SwiftUI
 
-struct ExitRoomPopUp: View {
-    @EnvironmentObject var store: GameStore
+struct PopUpBuilder: View {
     @Binding var isPresented: Bool
+    var title: String
+    var subtitle: String
+    var action: () -> Void
     
     var body: some View {
         VStack{
-            if let roomName = store.currRoom?.roomName{
-                HTHText(title: "Exit \(roomName)?")
-            }else{
-                HTHText(title: "Exit Room?")
-            }
-            
-            if store.currRoom?.players.count == 1{
-                HTHText(title: "The room will be deleted")
-            }
-            else if store.currRoom?.hostID.uuidString == store.networkManager.myPeerId.uuidString{
-                HTHText(title: "Your hostship will be transferred to the next player")
-            }
+            HTHText(title: title)
+            HTHText(title: subtitle)
             
             HStack{
                 SecondaryButton(title:"No"){
@@ -32,25 +24,57 @@ struct ExitRoomPopUp: View {
                 }
                 
                 PrimaryButton(title:"Yes"){
-                    //check if the room is gonna be empty, delete room
-                    if store.currRoom?.players.count == 1{
-                        store.clearGame()
-                        store.networkManager.stop()
-                    }
-                    //check if he's the host
-                    else if store.currRoom?.hostID.uuidString == store.networkManager.myPeerId.uuidString{
-                        store.leaveRoomAsHost()
-                    }
-                    
-                    else{
-                        store.leaveRoomAsParticipant(on: store.connectionToHost!)
-                    }
-                    
-                    isPresented = false
+                    action()
                 }
             }
         }.padding()
             .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.black))
+    }
+}
+
+#Preview {
+    @Previewable @State var isPresented: Bool = true
+    PopUpBuilder(isPresented: $isPresented, title: "Title", subtitle: "subtitle"){
+        
+    }
+}
+
+struct ExitRoomPopUp: View {
+    @EnvironmentObject var store: GameStore
+    @Binding var isPresented: Bool
+    @State var roomName: String = ""
+    @State var subTitle: String = ""
+    
+    var body: some View {
+            PopUpBuilder(isPresented: $isPresented, title: "Exit \(roomName)?", subtitle: subTitle){
+                
+                //check if the room is gonna be empty, delete room
+                if store.currRoom?.players.count == 1{
+                    store.clearGame()
+                    store.networkManager.stop()
+                }
+                //check if he's the host
+                else if store.currRoom?.hostID.uuidString == store.networkManager.myPeerId.uuidString{
+                    store.leaveRoomAsHost()
+                }
+                
+                else{
+                    store.leaveRoomAsParticipant(on: store.connectionToHost!)
+                }
+                
+                isPresented = false
+            }.onAppear{
+                roomName = store.currRoom?.roomName ?? "Room"
+                let hostID = store.currRoom?.hostID.uuidString
+                let playerID = store.networkManager.myPeerId.uuidString
+                
+                if store.currRoom?.players.count == 1 {
+                    subTitle = "The room will be deleted"
+                }
+                else if hostID == playerID {
+                    subTitle = "Your hostship will be transferred to the next player"
+                }
+            }
         
     }
 }
@@ -61,21 +85,10 @@ struct JoinRoomPopUp: View {
     @State var room: DiscoveredRoom
     
     var body: some View {
-        VStack{
-            HTHText(title: "Join \(room.roomName)?")
-            
-            HStack{
-                SecondaryButton(title:"No"){
-                    isPresented = false
-                }
-                
-                PrimaryButton(title:"Yes"){
-                    isPresented = false
-                    store.state = .customizeAlien
-                }
-            }
-        }.padding()
-            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.black))
+        PopUpBuilder(isPresented: $isPresented, title: "Join \(room.roomName)?", subtitle: ""){
+                isPresented = false
+                store.state = .customizeAlien
+        }
     }
 }
 
@@ -93,6 +106,19 @@ struct RoomFullPopUp: View {
         }
         .padding()
         .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.black))
+    }
+}
+
+struct KickPlayerPopUp: View {
+    @EnvironmentObject var store: GameStore
+    @Binding var isPresented: Bool
+    @State var player: Player
+    
+    var body: some View {
+        PopUpBuilder(isPresented: $isPresented, title: "Remove \(player.name) from this room?", subtitle: ""){
+            store.kickPlayer(player)
+            isPresented = false
+        }
     }
 }
 
@@ -152,7 +178,7 @@ struct RoomSettingPopUp: View {
     }
 }
 
-#Preview {
-    @Previewable @State var isPresented: Bool = true
-    RoomSettingPopUp(isPresented:$isPresented, value: 0).environmentObject(GameStore()).preferredColorScheme(.dark)
-}
+//#Preview {
+//    @Previewable @State var isPresented: Bool = true
+//    RoomSettingPopUp(isPresented:$isPresented, value: 0).environmentObject(GameStore()).preferredColorScheme(.dark)
+//}

@@ -34,7 +34,8 @@ class NetworkManager: ObservableObject{
             let listener = try NWListener(using: parameters)
             
             
-            let metadata = ["roomID": room.id.uuidString, "hostID": room.hostID.uuidString]
+            let metadata = ["roomID": room.id.uuidString, "hostID": room.hostID.uuidString, "hostAvatar": room.players.first!.avatar]
+            
             let txtRecord = NWTXTRecord(metadata)
             
             listener.service = NWListener.Service(
@@ -138,7 +139,12 @@ class NetworkManager: ObservableObject{
                         case .readmitted:
                             print("You have been admitted, updating UI")
                             self.onJoinResponse?(.readmitted, connection)
+                            
+                        case .kicked:
+                            print("You have been kicked from the room")
+                            self.onJoinResponse?(.readmitted, connection)
                         }
+                        
                         
                         
                     case .leaveNotice:
@@ -272,7 +278,7 @@ class NetworkManager: ObservableObject{
                 guard case .bonjour(let txtRecord) = result.metadata else {
                     continue
                 }
-
+                
                 guard
                     let roomIDString = txtRecord["roomID"],
                     let roomID = UUID(uuidString: roomIDString)
@@ -285,13 +291,19 @@ class NetworkManager: ObservableObject{
                 else {
                     continue
                 }
+                guard
+                    let hostAvatar = txtRecord["hostAvatar"]
+                else {
+                    continue
+                }
                 print("room id:", roomIDString)
             
                 let room = DiscoveredRoom(
                     id: roomID,
                     roomName: name,
                     roomEndpoint: result.endpoint,
-                    hostID: hostID
+                    hostID: hostID,
+                    hostAvatar: hostAvatar
                 )
                 discoveredRooms.append(room)
                 

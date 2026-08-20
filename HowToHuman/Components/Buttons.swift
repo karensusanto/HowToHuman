@@ -14,13 +14,14 @@ struct BackButton: View {
     var body: some View {
         Button{ store.state = toState }label:{
             Image(systemName: "chevron.left")
-                .foregroundStyle(Color.white)
+                .foregroundStyle(Color.white).bold()
+                .font(.system(size: HTHSize.title))
                 .padding()
         }
         .clipShape(Circle())
-        .overlay(
+        .background(
             Circle()
-                .stroke(Color.white.opacity(0.6), lineWidth: 1)
+                .fill(HTHColor.purple)
         )
     }
 }
@@ -67,19 +68,11 @@ struct PrimaryButton: View {
                         .fill(isDisabled ? Color.white.opacity(0.3) : HTHColor.purple)
                     HStack{
                         Spacer()
-                        let rotation = -65.78
-                        let bigShadowHeight = 46.43
-                        let smallShadowHeight = 7.75
-                        let shadowWidth = btnHeight + 30
-                        let shadowAreaWidth = geometry.size.width * 0.5
-                        let spacing = CGFloat((btnHeight - 30) * -1)
-                        
-                        HStack(spacing: spacing){
-                            Rectangle().fill(Color.white.opacity(0.3)).rotationEffect(.degrees(rotation)).frame(width: shadowWidth, height: bigShadowHeight)
-                            Rectangle().fill(Color.white.opacity(0.3)).rotationEffect(.degrees(rotation)).frame(width: shadowWidth, height: smallShadowHeight)
-                            Rectangle().fill(Color.white.opacity(0.3)).rotationEffect(.degrees(rotation)).frame(width: shadowWidth, height: bigShadowHeight)
-                        }.frame(width: shadowAreaWidth, height: btnHeight)
-                    }.clipped()
+                        Image("button-reflection").resizable().frame(width: geometry.size.width * 0.5, height: btnHeight)
+                    }
+                    .clipShape(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    )
                 }
             }
         )
@@ -147,20 +140,26 @@ struct OpenSettingButton: View {
     var action: () -> Void
     
     @State private var isPressed = false
+    let btnWidth: CGFloat = 72
     
     var body: some View {
         Button {
             action()
         } label: {
-            Image(systemName: "gear")
-            
+            Image(systemName: "timer").font(.custom(HTHFont.slackey, size: 32))
         }
-        .frame(maxWidth: 72)
-        .frame(height: 72)
+        .frame(maxWidth: btnWidth)
+        .frame(height: btnWidth)
         .foregroundStyle(Color.white)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(AnyShapeStyle(HTHColor.purple))
+            ZStack{
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(HTHColor.purple)
+                HStack{
+                    Spacer()
+                    Image("button-reflection").resizable().frame(width: btnWidth * 0.5, height: btnWidth)
+                }
+            }
         )
         .scaleEffect(isPressed ? 0.97 : 1.0)
         .simultaneousGesture(

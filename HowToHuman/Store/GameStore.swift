@@ -49,6 +49,7 @@ final class GameStore: ObservableObject {
     @Published var showExitRoomPopUp: Bool = false
     @Published var showRoomFullPopUp: Bool = false
     @Published var showSettingPopUp: Bool = false
+    @Published var showKickPlayerPopUp: Bool = false
     @Published var playerGameDataList: [PlayerGameData] = []
     @Published var voteResult: Float?
     
@@ -116,6 +117,12 @@ final class GameStore: ObservableObject {
                     connection: connection
                 )
             }
+        }
+    }
+    
+    func startBrowsing() {
+        networkManager.startBrowsing(){rooms in
+            self.availableRooms = rooms
         }
     }
     
@@ -200,7 +207,10 @@ final class GameStore: ObservableObject {
             state = .lobbySearch
         case .readmitted:
             state = .lobby
+        case .kicked:
+            clearGame()
         }
+        
     
     }
     
@@ -395,6 +405,21 @@ final class GameStore: ObservableObject {
         }catch{
             print("Encoding failed:", error)
         }
+    }
+    
+    func kickPlayer(_ player: Player){
+        do{
+            let data = try JSONEncoder().encode(JoinResponse.kicked)
+            let envelopedData = try JSONEncoder().encode(MessageEnvelope(type: .joinResponse, data: data))
+            
+            networkManager.send(data: envelopedData, over: currentConnections[player.id]!, errMsg: "Send kick player action failed")
+            
+        }catch {
+            print("Encoding failed: ", error)
+        }
+        currRoom?.players.removeAll() { $0.id == player.id }
+        currentConnections.removeValue(forKey: player.id)
+        sendDataToPlayers()
     }
     
     func assignQuestions(){
