@@ -14,16 +14,16 @@ struct ExitRoomPopUp: View {
     var body: some View {
         VStack{
             if let roomName = store.currRoom?.roomName{
-                Text("Exit \(roomName)?")
+                HTHText(title: "Exit \(roomName)?")
             }else{
-                Text("Exit Room?")
+                HTHText(title: "Exit Room?")
             }
             
             if store.currRoom?.players.count == 1{
-                Text("The room will be deleted")
+                HTHText(title: "The room will be deleted")
             }
             else if store.currRoom?.hostID.uuidString == store.networkManager.myPeerId.uuidString{
-                Text("Your hostship will be transferred to the next player")
+                HTHText(title: "Your hostship will be transferred to the next player")
             }
             
             HStack{
@@ -62,7 +62,7 @@ struct JoinRoomPopUp: View {
     
     var body: some View {
         VStack{
-            Text("Join \(room.roomName)?")
+            HTHText(title: "Join \(room.roomName)?")
             
             HStack{
                 SecondaryButton(title:"No"){
@@ -85,7 +85,7 @@ struct RoomFullPopUp: View {
     
     var body: some View {
         VStack{
-            Text("Sorry, \(room.roomName) is full")
+            HTHText(title: "Sorry, \(room.roomName) is full")
             
             SecondaryButton(title:"OK"){
                 isPresented = false
@@ -103,43 +103,56 @@ struct RoomSettingPopUp: View {
     @State var value: Float
     
     var body: some View {
-        VStack(spacing: 20){
-            Text("Room Settings")
-            Slider(value: $value, in: 0...3, step: 1){
-                Text("Room Settings")
-            }
-            HStack{
-                Text("No Timer")
-                Spacer()
-                Text("Fast")
-                Spacer()
-                Text("Normal")
-                Spacer()
-                Text("Slow")
-            }
-            
-            SecondaryButton(title: "DONE"){
-                switch value{
-                case 0:
-                    store.currRoom?.timerMode =  .noTime
-                case 1:
-                    store.currRoom?.timerMode =  .fast
-                case 2:
-                    store.currRoom?.timerMode =  .normal
-                case 3:
-                    store.currRoom?.timerMode =  .slow
-                default:
-                    store.currRoom?.timerMode = .normal
+        ZStack{
+            Color.clear.ignoresSafeArea()
+            VStack(spacing: 40){
+                HTHText(title: "Room Settings", size: HTHSize.title, color: HTHColor.yellow)
+                VStack(alignment: .leading, spacing: 20){
+                    HTHText(title: "Timer")
+                    Slider(value: $value, in: 0...2, step: 1){
+                        HTHText(title: "Room Settings")
+                    }
+                    
+                    HStack{
+                        HTHText(title: "Fast")
+                        Spacer()
+                        HTHText(title: "Normal")
+                        Spacer()
+                        HTHText(title: "Slow")
+                    }
                 }
-                isPresented = false
+                let timerMode = switch value{
+                case 0:
+                    TimerMode.fast
+                case 1:
+                    TimerMode.normal
+                case 2:
+                    TimerMode.slow
+                default:
+                    TimerMode.normal
+                }
+                Spacer()
+                let questionTime = timerMode.seconds(for: .question) ?? 0
+                let answerTime = timerMode.seconds(for: .steps) ?? 0
+                let experienceTime = timerMode.seconds(for: .experience) ?? 0
+                HTHText(title: "Question time: \(questionTime) seconds")
+                HTHText(title: "Answer time: \(answerTime) seconds")
+                HTHText(title: "Write Experience time: \(experienceTime) seconds")
+                Spacer()
+                Color.clear
+                PrimaryButton(title: "DONE"){
+                    store.currRoom?.timerMode = timerMode
+                    isPresented = false
+                }
             }
+            .padding()
         }
-        .padding()
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.black))
+        .background(HTHOnboardingBackground())
+//        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.black))
     }
 }
 
 #Preview {
     @Previewable @State var isPresented: Bool = true
-    ExitRoomPopUp(isPresented:$isPresented).environmentObject(GameStore()).preferredColorScheme(.dark)
+    RoomSettingPopUp(isPresented:$isPresented, value: 0).environmentObject(GameStore()).preferredColorScheme(.dark)
 }

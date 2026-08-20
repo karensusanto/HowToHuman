@@ -8,26 +8,37 @@
 import SwiftUI
 
 class AlienAvatar{
-    static var allCases: [String] = ["alien-placeholder", "alien-placeholder-2"]
+    static var allCases: [String] = [
+        "spaceship-yellow",
+        "spaceship-blue",
+        "spaceship-neo",
+        "spaceship-cyan",
+        "spaceship-pink",
+        "spaceship-purple",
+    ]
 }
 
 struct Avatar: View {
     let avatar: String
     @State private var floating: Bool = false
-    var size: CGFloat = 56
+    var size: CGFloat = 65
     var selected: Bool = false
     
     var body: some View {
         ZStack {
             Circle()
-                .strokeBorder(Color.white,
-                              lineWidth: selected ? 2.5 : 0)
+                .strokeBorder(Color.white.opacity(0.5),
+                              lineWidth: 0.5)
             
             Image(avatar)
                 .resizable()
                 .scaledToFit()
                 .frame(width: size * 0.5)
                 .offset(y: floating ? 1.5 : -1.5)
+            
+            Circle()
+                .strokeBorder(Color.white,
+                              lineWidth: selected ? 2.5 : 0)
 //            Text(avatar)
 //                .font(.system(size: size * 0.5))
 //                .offset(y: floating ? -1.5 : 1.5)
@@ -45,7 +56,7 @@ struct AvatarGridView: View {
     @Binding var selectedAvatar: String
     @State var listOfAvatars: [String] = AlienAvatar.allCases
     let columns = [
-        GridItem(.adaptive(minimum: 65))
+        GridItem(.adaptive(minimum: 70))
     ]
     
     var body: some View {
@@ -55,6 +66,31 @@ struct AvatarGridView: View {
                 label:{
                     Avatar(avatar: avatar, selected: selectedAvatar == avatar)
                 }
+            }
+        }
+    }
+}
+
+struct AvatarLobbyView: View {
+    let player: Player
+    @EnvironmentObject var store: GameStore
+    
+    var body: some View {
+        Button{
+            
+        }label:{
+            VStack{
+                Image(player.avatar).resizable().scaledToFit().frame(width: 80)
+                let addition = player.id == store.networkManager.myPeerId ? " (You)" :""
+                let (color, additionColor) =
+                player.id == store.currRoom?.hostID ?
+                (HTHColor.blue, HTHColor.blue) :
+                (Color.white, HTHColor.yellow)
+                
+                HTHText(title: player.name, color: color).multilineTextAlignment(.center)
+                HTHText(title: addition, color: additionColor)
+                
+                
             }
         }
     }

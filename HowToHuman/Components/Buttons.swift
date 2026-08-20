@@ -43,7 +43,8 @@ struct ExitRoomButton: View {
 
 struct PrimaryButton: View {
     let title: String
-//    var isLoading: Bool = false
+    @State var size: CGFloat = 32
+    @State var btnHeight: CGFloat = 56
     var isDisabled: Bool = false
     var action: () -> Void
 
@@ -53,15 +54,34 @@ struct PrimaryButton: View {
         Button {
             action()
         } label: {
-            Text(title)
+            HTHText(title: title, size: size)
             
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 54)
-        .foregroundStyle(Color.black)
+        .frame(height: btnHeight)
+        .foregroundStyle(Color.white)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(isDisabled ? AnyShapeStyle(Color.gray) : AnyShapeStyle(Color.blue))
+            GeometryReader { geometry in
+                ZStack{
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(isDisabled ? Color.white.opacity(0.3) : HTHColor.purple)
+                    HStack{
+                        Spacer()
+                        let rotation = -65.78
+                        let bigShadowHeight = 46.43
+                        let smallShadowHeight = 7.75
+                        let shadowWidth = btnHeight + 30
+                        let shadowAreaWidth = geometry.size.width * 0.5
+                        let spacing = CGFloat((btnHeight - 30) * -1)
+                        
+                        HStack(spacing: spacing){
+                            Rectangle().fill(Color.white.opacity(0.3)).rotationEffect(.degrees(rotation)).frame(width: shadowWidth, height: bigShadowHeight)
+                            Rectangle().fill(Color.white.opacity(0.3)).rotationEffect(.degrees(rotation)).frame(width: shadowWidth, height: smallShadowHeight)
+                            Rectangle().fill(Color.white.opacity(0.3)).rotationEffect(.degrees(rotation)).frame(width: shadowWidth, height: bigShadowHeight)
+                        }.frame(width: shadowAreaWidth, height: btnHeight)
+                    }.clipped()
+                }
+            }
         )
         .scaleEffect(isPressed ? 0.97 : 1.0)
         .opacity(isDisabled ? 0.6 : 1.0)
@@ -72,13 +92,25 @@ struct PrimaryButton: View {
                 .onEnded { _ in isPressed = false }
         )
         .animation(.easeOut(duration: 0.15), value: isPressed)
+        .shadow(
+            color: HTHColor.purple.opacity(0.3),
+            radius: 30
+        )
     }
 }
 
+#Preview {
+    VStack{
+        PrimaryButton(title: "Create a Room"){
+            
+        }
+    }.padding()
+}
 
 struct SecondaryButton: View {
     let title: String
-//    var isLoading: Bool = false
+    @State var size: CGFloat = 25
+    @State var btnHeight: CGFloat = 56
     var isDisabled: Bool = false
     var action: () -> Void
 
@@ -88,16 +120,15 @@ struct SecondaryButton: View {
         Button {
             action()
         } label: {
-            Text(title)
+            HTHText(title: title, size: size)
             
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 54)
+        .frame(height: btnHeight)
         .foregroundStyle(Color.white)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.gray, lineWidth: 1.5)
-                .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.black.opacity(0.6)))
+                .fill(Color.white.opacity(0.3))
         )
         .scaleEffect(isPressed ? 0.97 : 1.0)
         .opacity(isDisabled ? 0.6 : 1.0)
@@ -113,7 +144,6 @@ struct SecondaryButton: View {
 
 
 struct OpenSettingButton: View {
-//    var isLoading: Bool = false
     var action: () -> Void
     
     @State private var isPressed = false
@@ -125,13 +155,12 @@ struct OpenSettingButton: View {
             Image(systemName: "gear")
             
         }
-        .frame(maxWidth: 54)
-        .frame(height: 54)
+        .frame(maxWidth: 72)
+        .frame(height: 72)
         .foregroundStyle(Color.white)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.gray, lineWidth: 1.5)
-                .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.black.opacity(0.6)))
+                .fill(AnyShapeStyle(HTHColor.purple))
         )
         .scaleEffect(isPressed ? 0.97 : 1.0)
         .simultaneousGesture(

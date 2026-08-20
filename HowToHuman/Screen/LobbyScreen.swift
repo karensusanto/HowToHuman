@@ -13,13 +13,14 @@ struct LobbyScreen: View {
     
     var body: some View {
         ZStack{
+            Color.clear.ignoresSafeArea()
             VStack{
                 HStack{
                     ExitRoomButton()
                     Spacer()
                     VStack{
-                        Text(store.currRoom?.roomName ?? "Lobby").font(.largeTitle)
-                        Text("\(store.currRoom?.players.count ?? 0) / \(store.currRoom?.maxPlayers ?? 8)")
+                        HTHText(title: store.currRoom?.roomName ?? "Lobby", size: HTHSize.title, color: HTHColor.yellow)
+                        HTHText(title: "\(store.currRoom?.players.count ?? 0) / \(store.currRoom?.maxPlayers ?? 8)")
                     }
                     Spacer()
                     Color.clear.frame(width: 40, height: 40)
@@ -32,23 +33,7 @@ struct LobbyScreen: View {
                 LazyVGrid(columns: columns, spacing: 20) {
                     ForEach(store.currRoom?.players ?? [], id: \.id){player in
                         VStack{
-                            if player.id == store.currRoom?.hostID{
-                                Text("Host").foregroundStyle(Color.blue)
-                            }
-                            else{
-                                Text("Player")
-                            }
-                            Button{
-                                
-                            }label:{
-                                Avatar(avatar: player.avatar, selected: true)
-                            }
-                            if player.id == store.currRoom?.hostID && store.currRoom?.hostID == store.networkManager.myPeerId{
-                                Text("You").foregroundStyle(Color.blue)
-                            }
-                            else{
-                                Text(player.name)
-                            }
+                            AvatarLobbyView(player: player)
                         }
                     }
                 }
@@ -61,7 +46,7 @@ struct LobbyScreen: View {
                             store.showSettingPopUp = true
                         }
                         
-                        PrimaryButton(title: "START", isDisabled: store.currRoom!.players.count < 2){
+                        PrimaryButton(title: "START", btnHeight: 72, isDisabled: store.currRoom!.players.count < 2){
                             store.phase = .askHuman
                             store.state = .transition
                             store.sendDataToPlayers()
@@ -71,7 +56,7 @@ struct LobbyScreen: View {
                 else{
                     HStack{
                         ProgressView()
-                        Text("Waiting for host to start the game...")
+                        HTHText(title: "Waiting for host to start the game...", size: HTHSize.caption, font: HTHFont.space_grot)
                     }
                 }
                 
@@ -83,16 +68,19 @@ struct LobbyScreen: View {
             }
             
             let currTimeModeIdx = switch store.currRoom?.timerMode{
-            case .noTime: 0
-            case .fast: 1
-            case .normal: 2
-            case .slow: 3
-            case .none:
-                2
+            case .fast: 0
+            case .normal: 1
+            case .slow: 2
+            default:
+                1
             }
             if store.showSettingPopUp{
                 RoomSettingPopUp(isPresented: $store.showSettingPopUp, value: Float(currTimeModeIdx))
             }
+        }
+        .frame(maxWidth: .infinity)
+        .background {
+            HTHOnboardingBackground()
         }
     }
 }

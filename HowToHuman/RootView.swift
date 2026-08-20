@@ -28,9 +28,9 @@ struct RootView: View {
             case .askHuman:
                 AlienQuestionScreen()
             case .answerAlien:
-                EmptyView()
+                HumanInstructionScreen()
             case .narrateExperience:
-                EmptyView()
+                AlienNarrationScreen()
             case .reviewExperience:
                 EmptyView()
             case .voting:

@@ -11,28 +11,31 @@ struct HomeScreen: View {
     @EnvironmentObject var store: GameStore
     
     var body: some View {
-        NavigationStack{
+        ZStack{
+            Color.clear.ignoresSafeArea()
             VStack(spacing: 100) {
                 
-                VStack{
-                    Image("alien-placeholder").resizable().scaledToFit()
-                        .frame( height: 100)
-                    Text("HOW TO HUMAN")
-                }
+                
+                Image("HTHTitleText").resizable().scaledToFit()
                 
                 VStack(spacing: 20){
                     
-                    PrimaryButton(title: "PLAY"){
+                    PrimaryButton(title: "Play", size: HTHSize.largestTitle, btnHeight: 102){
                         store.state = .lobbySearch
                     }
                     
-                    SecondaryButton(title: "HOW TO PLAY"){
+                    SecondaryButton(title: "How To Play"){
                         store.state = .howToPlay
                     }
                 }
                 .padding(.horizontal, 20)
             }
             .padding(50)
+            
+        }
+        .frame(maxWidth: .infinity)
+        .background {
+            HTHOnboardingBackground()
         }
     }
 }

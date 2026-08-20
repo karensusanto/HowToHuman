@@ -7,5 +7,10 @@
 		<string>_how-to-human._tcp</string>
 		<string>_how-to-human._udp</string>
 	</array>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Slackey-Regular.ttf</string>
+		<string>SpaceGrotesk-VariableFont_wght.ttf</string>
+	</array>
 </dict>
 </plist>
