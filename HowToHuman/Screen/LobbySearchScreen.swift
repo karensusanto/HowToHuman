@@ -9,7 +9,8 @@ import SwiftUI
 
 struct orbitView: View {
     var body: some View {
-        Text("🌏").font(.largeTitle)
+        Image("earth-perimeter").resizable().scaledToFit().frame(height: 300)
+        Image("earth").resizable().scaledToFit().frame(height: 150)
     }
 }
 
@@ -21,18 +22,18 @@ struct LobbySearchScreen: View {
     
     var body: some View {
         ZStack{
+            Color.clear.ignoresSafeArea()
+             
+            orbitView()
             VStack{
                 HStack{
                     BackButton(toState: .home)
                     Spacer()
-                    Text("JOIN A ROOM")
-                        .font(.system(size: 13, weight: .bold))
-                        .tracking(1.5)
+                    HTHText(title: "JOIN A ROOM", size: HTHSize.title, color: HTHColor.yellow)
                     Spacer()
                     Color.clear.frame(width: 40, height: 40)
                 }
                 
-                orbitView()
                 ScrollView{
                     ForEach(store.availableRooms, id: \.id){room in
                         Button{
@@ -48,7 +49,7 @@ struct LobbySearchScreen: View {
                     }
                 }
                 
-                PrimaryButton(title: "CREATE ROOM"){
+                PrimaryButton(title: "CREATE ROOM", btnHeight: 72){
                     store.joiningRoom = nil
                     store.state = .customizeAlien
                 }
@@ -69,6 +70,10 @@ struct LobbySearchScreen: View {
             if store.showRoomFullPopUp{
                 RoomFullPopUp(isPresented: $store.showRoomFullPopUp, room: store.joiningRoom!)
             }
+        }
+        .frame(maxWidth: .infinity)
+        .background {
+            HTHOnboardingBackground()
         }
     }
 }

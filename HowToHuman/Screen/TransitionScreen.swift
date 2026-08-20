@@ -7,68 +7,102 @@
 
 import SwiftUI
 
-class HTHFontSize{
-    static var body: CGFloat = 16
-    static var subtext: CGFloat = 11
-    static var title: CGFloat = 24
-}
-
 struct TransitionScreen: View {
     @EnvironmentObject var store: GameStore
     
-    let instructions: Dictionary<GamePhase, [(String, CGFloat)]> = [
-        .askHuman: [("**You are an alien.**", HTHFontSize.body),
-                    ("You and your team have just discovered Earth.\n\n", HTHFontSize.body),
-                    ("\n\n", HTHFontSize.body),
-                    ("Curious, you want to experience human life for yourself.", HTHFontSize.body),
-                    ("But first, you need to know how humans do things.", HTHFontSize.body),
-                    ("\n\n", HTHFontSize.body),
-                    ("Ask a human:", HTHFontSize.body),
-                    ("**\"How do you...?\"**", HTHFontSize.title),
-                    ("_The simpler, the better_", HTHFontSize.body)],
-        
-            .answerAlien: [("**Now, it's your turn, human.**", HTHFontSize.body),
-                           ("An alien needs your help understanding how humans work.", HTHFontSize.body),
-                           ("Beware: alien knows nothing about humans and might take everything you say literally.", HTHFontSize.body),
-                           ("**Answer their question as clearly as you can.**", HTHFontSize.body),
-                           ("_What could possibly go wrong?_", HTHFontSize.body)],
-        
-            .narrateExperience: [("**Aliens, the humans have answered.**", HTHFontSize.body),
-                                 ("You may go down to Earth with the guidance they provided.", HTHFontSize.body),
-                                 ("**Follow their instruction, write down your experience.**", HTHFontSize.body),
-                                 ("_Your fellow aliens will want to know._", HTHFontSize.body)],
+    let instructions: Dictionary<GamePhase, [(String, CGFloat, String)]> = [
+        .none: [],
+        .askHuman: [("**You are an alien.**", HTHSize.body, HTHFont.slackey),
+                    ("You and your team have just discovered Earth.\n\n", HTHSize.body, HTHFont.slackey),
+                    ("\n\n", HTHSize.body, HTHFont.slackey),
+                    ("Curious, you want to experience human life for yourselves.", HTHSize.body, HTHFont.slackey),
+                    ("First, you need to know how humans do things.", HTHSize.body, HTHFont.slackey),
+                    ("\n\n", HTHSize.body, HTHFont.slackey),
+                    ("Ask a human:", HTHSize.body, HTHFont.slackey),
+                    ("**\"How do you...?\"**", HTHSize.title, HTHFont.slackey),
+                    ("\n", HTHSize.title, HTHFont.slackey),
+                    ("_The simpler, the better_", HTHSize.body, HTHFont.slackey),
+                    ("\n\n", HTHSize.body, HTHFont.slackey)
+                   ],
         
         
-            .reviewExperience: [("**Welcome back to the spaceship, aliens.**", HTHFontSize.body),
-                                ("Time to review our experiences.", HTHFontSize.body),
-                                ("Let's compare and see how everyone's visit turned out.", HTHFontSize.body)],
-        
-            .voting: [("You've heard everyone's experiences on Earth.", HTHFontSize.body),
-                      ("Now, would you visit Earth again?", HTHFontSize.body),
-                      ("**Cast your vote.**", HTHFontSize.body)]
+        .answerAlien: [("**Now, it's your turn, human.**", HTHSize.body, HTHFont.slackey),
+                       ("\n\n", HTHSize.body, HTHFont.slackey),
+                       ("An alien needs your help understanding how to be humans", HTHSize.body, HTHFont.slackey),
+                       ("\n\n", HTHSize.body, HTHFont.slackey),
+                       ("**Answer their question as clearly as you can.**", HTHSize.body, HTHFont.slackey),
+                       ("\n\n", HTHSize.body, HTHFont.slackey),
+                       ("Beware: alien knows nothing about humans and might take everything you say literally.", HTHSize.body, HTHFont.slackey),
+                       ("\n\n", HTHSize.body, HTHFont.slackey)
+                       //                           ("_What could possibly go wrong?_", HTHSize.body)
+                      ],
+
+        .narrateExperience: [("**Aliens, the humans have answered.**", HTHSize.body, HTHFont.slackey),
+                             ("\n\n", HTHSize.body, HTHFont.slackey),
+                             ("Go down to Earth with the guidance the humans provided.", HTHSize.body, HTHFont.slackey),
+                             ("\n\n", HTHSize.body, HTHFont.slackey),
+                             ("**Follow their instruction, write down your experience.**", HTHSize.body, HTHFont.slackey),
+                             ("\n\n", HTHSize.body, HTHFont.slackey),
+                             ("What happened?", HTHSize.body, HTHFont.slackey),
+                             ("\n\n", HTHSize.body, HTHFont.slackey),
+                             ("_Your fellow aliens will want to know._", HTHSize.body, HTHFont.slackey),
+                             ("\n\n", HTHSize.body, HTHFont.slackey)
+                            ],
+
+
+        .reviewExperience: [("**Welcome back to the spaceship, aliens.**", HTHSize.body, HTHFont.slackey),
+                            ("\n\n", HTHSize.body, HTHFont.slackey),
+                            ("Time to share our experience", HTHSize.body, HTHFont.slackey),
+                            ("\n\n", HTHSize.body, HTHFont.slackey),
+                            ("Let's see who goes first.", HTHSize.body, HTHFont.slackey),
+                            ("\n\n", HTHSize.body, HTHFont.slackey)
+                           ],
+
+        .voting: [("Now that everyone's shared their experiences, answer this:", HTHSize.body, HTHFont.slackey),
+                  ("\n\n", HTHSize.body, HTHFont.slackey),
+                  ("Would you revisit Earth?", HTHSize.title, HTHFont.slackey),
+                  ("\n\n", HTHSize.body, HTHFont.slackey),
+                  ("**Cast your vote.**", HTHSize.body, HTHFont.slackey),
+                  ("\n\n", HTHSize.body, HTHFont.slackey),
+                 ]
     ]
     
-    @State private var visibleRows: [Bool] = [false, false, false, false, false, false, false, false, false, false]
+    @State private var visibleRows: [Bool] = [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false]
     @State private var animationWorkItems: [DispatchWorkItem] = []
     var body: some View {
         ZStack{
+            Color.clear.ignoresSafeArea()
             VStack{
                 HStack{
                     ExitRoomButton()
                     Spacer()
                 }
                 Spacer()
-                let instruction = instructions[store.phase]!
-                ForEach(0..<instruction.count, id: \.self){ index in
-                    let attributedString = try? AttributedString(markdown: instruction[index].0)
-                    Text(attributedString ?? "")
-                        .font(.system(size: instruction[index].1))
-                        .opacity(visibleRows[index] ? 1.0 : 0.0)
-                        .multilineTextAlignment(.center)
-                        .animation(.easeIn(duration: 0.6), value: visibleRows[index])
-                        .tracking(1.5)
+                VStack{
+                    let instruction = instructions[store.phase]!
                     
-                }
+                    ForEach(instruction.indices, id:\.self){ index in
+                        if instruction[index].0 == "\n\n"{
+                            Color.clear.frame(width: 40, height: 40)
+                        } else if instruction[index].0 == "\n"{
+                            Color.clear.frame(width: 40, height: 10)
+                        } else {
+                            let attributedString = try? AttributedString(
+                                markdown: instruction[index].0
+                            )
+                            HTHText(
+                                markdowntitle: attributedString ?? "",
+                                size: instruction[index].1,
+                                font: HTHFont.space_grot
+                            )
+                            .opacity(visibleRows[index] ? 1.0 : 0.0)
+                            .multilineTextAlignment(.center)
+                            .animation(.easeIn(duration: 0.6), value: visibleRows[index])
+                            .tracking(1.5)
+                        }
+                    }
+                    
+                }.padding(.horizontal, 40)
                 Spacer()
                 
                 if store.currRoom?.hostID == store.networkManager.myPeerId {
@@ -103,6 +137,10 @@ struct TransitionScreen: View {
             if store.showExitRoomPopUp == true{
                 ExitRoomPopUp(isPresented: $store.showExitRoomPopUp)
             }
+        }
+        .frame(maxWidth: .infinity)
+        .background {
+            HTHGameBackground()
         }
     }
     

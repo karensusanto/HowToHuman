@@ -8,13 +8,12 @@ import Foundation
 import Network
 
 nonisolated enum TimerMode: Int, CaseIterable, Identifiable, Codable, Sendable {
-    case noTime, fast, normal, slow
+    case fast, normal, slow
 
     var id: Int { rawValue }
 
     var label: String {
         switch self {
-        case .noTime: return "NO TIME"
         case .fast: return "FAST"
         case .normal: return "NORMAL"
         case .slow: return "SLOW"
@@ -22,30 +21,28 @@ nonisolated enum TimerMode: Int, CaseIterable, Identifiable, Codable, Sendable {
     }
 
     enum PhaseKind {
-        case question, steps, answer
+        case question, steps, experience
     }
 
     func seconds(for kind: PhaseKind) -> Int? {
         switch self {
-        case .noTime:
-            return nil
         case .fast:
             switch kind {
             case .question: return 15
             case .steps: return 60
-            case .answer: return 90
+            case .experience: return 120
             }
         case .normal:
             switch kind {
-            case .question: return 20
-            case .steps: return 90
-            case .answer: return 120
+            case .question: return 30
+            case .steps: return 120
+            case .experience: return 180
             }
         case .slow:
             switch kind {
-            case .question: return 30
-            case .steps: return 120
-            case .answer: return 150
+            case .question: return 45
+            case .steps: return 180
+            case .experience: return 240
             }
         }
     }

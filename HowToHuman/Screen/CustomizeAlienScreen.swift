@@ -9,8 +9,9 @@ import SwiftUI
 
 struct CustomizeAlienScreen: View {
     @EnvironmentObject var store: GameStore
-    @State private var selectedAvatar: String = AlienAvatar.allCases.randomElement()!
+    @State private var selectedAvatar: String = AlienAvatar.allCases.first!
     @State var playerName : String = ""
+    @State var playerNameLen: Int = 0
     
     var body: some View {
         VStack {
@@ -20,15 +21,28 @@ struct CustomizeAlienScreen: View {
             }
             
             ScrollView {
-                Text(store.currRoom?.roomName ?? "Room").font(.system(.footnote))
-                Text("CUSTOMIZE YOUR ALIEN").font(.system(.title))
-                
-                Avatar(avatar: selectedAvatar, size: 100, selected: true)
-                
-                AvatarGridView(selectedAvatar: $selectedAvatar)
-                
-                TextField("Enter your name", text: $playerName)
-                    .padding(.vertical, 10)
+                VStack(spacing:20){
+                    Text(store.currRoom?.roomName ?? "Room").font(.system(.footnote))
+                    Text("CUSTOMIZE YOUR ALIEN").font(.system(.title))
+                    
+                    Avatar(avatar: selectedAvatar, size: 100, selected: true)
+                    
+                    AvatarGridView(selectedAvatar: $selectedAvatar)
+                    
+                    
+                    TextField("Enter your name", text: $playerName)
+                        .padding(.vertical, 10)
+                        .onChange(of: playerName) { _, newValue in
+                            if newValue.count > 20 {
+                                playerName = String(newValue.prefix(20))
+                            }
+                            playerNameLen = playerName.count
+                        }
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    HTHText(title: "\(playerNameLen)/20", size: HTHSize.caption, color: Color.gray)
+                    
+                }
             }
             
             PrimaryButton(title: "DONE", isDisabled: playerName.isEmpty){
