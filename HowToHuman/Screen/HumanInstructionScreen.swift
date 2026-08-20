@@ -6,29 +6,32 @@
 //
 
 import SwiftUI
+import Combine
 
 struct HumanInstructionScreen: View {
-    
+
     let question: String
+    @EnvironmentObject var store: GameStore
 
     @State private var steps: [String] = [""]
+    @State private var timeRemaining: Int = 30
 
-    private let stars: [StarDot] = (0..<25).map { _ in
-        StarDot(
-            x: CGFloat.random(in: 0...1),
-            y: CGFloat.random(in: 0...1),
-            size: CGFloat.random(in: 2...5),
-            phase: Double.random(in: 0...(2 * .pi)),
-            speed: Double.random(in: 0.3...0.9)
-        )
+    private let maxSteps = 5
+    private let yellowAccent = Color(red: 0.94, green: 0.76, blue: 0.29)
+    private let purpleGlow = Color(red: 0.70, green: 0.60, blue: 0.90)
+
+    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    private var filledStepsCount: Int {
+        steps.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }.count
     }
 
-    private struct StarDot {
-        let x: CGFloat
-        let y: CGFloat
-        let size: CGFloat
-        let phase: Double
-        let speed: Double
+    private var isReady: Bool {
+        filledStepsCount > 0
+    }
+
+    private var canAddStep: Bool {
+        steps.count < maxSteps
     }
 
     init(question: String = "How do you shower?") {
@@ -37,103 +40,74 @@ struct HumanInstructionScreen: View {
 
     var body: some View {
         ZStack {
-            Color.white
-                .ignoresSafeArea()
+            VStack {
 
-            starField
-                .ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                
-                HStack {
-                    roleBadge
-                    Spacer()
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-
-                outlineTitle
-                    .padding(.top, 20)
+                HTHText(title: "Guide The Alien", size: HTHSize.extraLargeTitle, color: HTHColor.yellow)
 
                 questionPill
                     .padding(.horizontal, 40)
                     .padding(.top, 16)
+                
+                //Baeni need Human Image TT.TT
+                Image("spaceship-blue")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 130)
+                    .padding()
 
-                stepIllustration
-                    .padding(.top, 70)
+                VStack(alignment: .trailing, spacing: 8) {
+                    stepCounter
 
-                VStack(spacing: 12) {
-                    ForEach(steps.indices, id: \.self) { index in
-                        stepField(index: index)
+                    VStack(spacing: 12) {
+                        ForEach(steps.indices, id: \.self) { index in
+                            stepField(index: index)
+                        }
+                        if canAddStep {
+                            addStepButton
+                        }
                     }
-                    addStepButton
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 28)
+                .padding(.top, 20)
 
                 Spacer()
 
-                Button {
-                    // TODO: submit the steps
-                } label: {
-                    Text("READY")
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
-                        .foregroundColor(.black)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(
-                            RoundedRectangle(cornerRadius: 28)
-                                .fill(Color(white: 0.9))
-                        )
+                PrimaryButton(title: "Ready", btnHeight: 56) {
+                    store.joiningRoom = nil
+                    store.state = .customizeAlien
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 20)
+                .disabled(!isReady)
+                .grayscale(isReady ? 0 : 1)
+                .opacity(isReady ? 1.0 : 0.6)
+                .animation(.easeInOut(duration: 0.2), value: isReady)
+                .padding()
             }
+        }
+        .frame(maxWidth: .infinity)
+        .background {
+            HTHGameBackground()
+        }
+        .onReceive(timer) { _ in
+            guard timeRemaining > 0 else { return }
+            timeRemaining -= 1
         }
     }
 
-    // MARK: - Status "You are the human"
-    private var roleBadge: some View {
-        HStack(spacing: 8) {
-            Circle()
-                .fill(Color.white)
-                .frame(width: 14, height: 14)
-            Text("You are the human")
-                .font(.system(size: 14, weight: .bold, design: .rounded))
+    private var timerBadge: some View {
+        HStack(spacing: 4) {
+            Text("\(timeRemaining)")
+                .font(.system(size: 16, weight: .bold, design: .rounded))
                 .foregroundColor(.white)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
-        .background(Capsule().fill(Color.black))
-    }
-
-    // MARK: - GUIDE THE HUMAN
-    private var outlineTitle: some View {
-        let text = "GUIDE THE HUMAN"
-        let font: Font = .system(size: 28, weight: .heavy, design: .rounded)
-        let strokeWidth: CGFloat = 1.6
-
-        return ZStack {
-            ForEach(Array(stride(from: 0.0, to: 360.0, by: 30.0)), id: \.self) { angle in
-                Text(text)
-                    .font(font)
-                    .foregroundColor(.black)
-                    .offset(
-                        x: strokeWidth * cos(angle * .pi / 180),
-                        y: strokeWidth * sin(angle * .pi / 180)
-                    )
-            }
-            Text(text)
-                .font(font)
+            Image(systemName: "clock.fill")
+                .font(.system(size: 14))
                 .foregroundColor(.white)
         }
     }
 
-    // MARK: - Question pill
     private var questionPill: some View {
         Text(question)
-            .font(.system(size: 22, weight: .heavy, design: .rounded))
-            .foregroundColor(.black)
+            .font(.system(size: 18, weight: .heavy, design: .rounded))
+            .foregroundColor(.white)
             .multilineTextAlignment(.center)
             .minimumScaleFactor(0.7)
             .lineLimit(3)
@@ -143,24 +117,32 @@ struct HumanInstructionScreen: View {
             .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 28)
-                    .fill(Color.white)
+                    .fill(Color.black)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 28)
-                    .stroke(Color.black, lineWidth: 2)
+                    .stroke(purpleGlow, lineWidth: 1.5)
+                    .shadow(color: purpleGlow.opacity(0.6), radius: 6)
             )
     }
 
-    // MARK: - Step text field
+
+    private var stepCounter: some View {
+        Text("\(filledStepsCount)/\(maxSteps)")
+            .font(.system(size: 13, weight: .semibold, design: .rounded))
+            .foregroundColor(.white.opacity(0.7))
+            .animation(.easeInOut(duration: 0.2), value: filledStepsCount)
+    }
+
     private func stepField(index: Int) -> some View {
         HStack(spacing: 12) {
             Text("\(index + 1)")
                 .font(.system(size: 15, weight: .bold, design: .rounded))
-                .foregroundColor(.black)
+                .foregroundColor(.white)
                 .frame(width: 30, height: 30)
-                .background(Circle().fill(Color(white: 0.9)))
+                .background(Circle().fill(Color.black))
 
-            TextField("Describe this step...", text: $steps[index], axis: .vertical)
+            TextField("Write the instructions here..", text: $steps[index], axis: .vertical)
                 .font(.system(size: 16))
                 .lineLimit(1...4)
         }
@@ -171,85 +153,31 @@ struct HumanInstructionScreen: View {
             RoundedRectangle(cornerRadius: 28)
                 .fill(Color.white)
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: 28)
-                .stroke(Color.black, lineWidth: 1.5)
-        )
     }
 
-    // MARK: - Add Step Button
     private var addStepButton: some View {
         Button {
+            guard canAddStep else { return }
             steps.append("")
         } label: {
-            Text("+ Add step")
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                .foregroundColor(.gray)
-                .frame(maxWidth: .infinity)
-                .frame(height: 48)
-                .background(
-                    RoundedRectangle(cornerRadius: 24)
-                        .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [5]))
-                        .foregroundColor(.gray.opacity(0.5))
-                )
-        }
-    }
-
-    // MARK: - Placeholder illustration
-    private var stepIllustration: some View {
-        ZStack {
-            Rectangle()
-                .fill(Color(white: 0.85))
-                .frame(width: 160, height: 110)
-                .overlay(Rectangle().stroke(Color.black, lineWidth: 1.5))
-            HStack{
-                Rectangle()
-                    .fill(Color.white)
-                    .frame(width: 50, height: 50)
-                    .overlay(Rectangle().stroke(Color.black, lineWidth: 1.5))
-                    .offset(y: -30)
-                    .padding(10)
-                Rectangle()
-                    .fill(Color.white)
-                    .frame(width: 50, height: 50)
-                    .overlay(Rectangle().stroke(Color.black, lineWidth: 1.5))
-                    .offset(y: -30)
-
+            HStack(spacing: 6) {
+                Image(systemName: "plus.circle.fill")
+                Text("add more steps..")
             }
-            Rectangle()
-                .fill(Color(white: 0.85))
-                .frame(width: 220, height: 70)
-                .overlay(Rectangle().stroke(Color.black, lineWidth: 1.5))
-                .rotationEffect(.degrees(-12))
-                .offset(x: -10, y: -55)
+            .font(.system(size: 15, weight: .semibold, design: .rounded))
+            .foregroundColor(.white.opacity(0.7))
+            .frame(maxWidth: .infinity)
+            .frame(height: 48)
+            .background(
+                RoundedRectangle(cornerRadius: 24)
+                    .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [5]))
+                    .foregroundColor(.white.opacity(0.5))
+            )
         }
-    }
-
-    // MARK: - Animated black star background
-    private var starField: some View {
-        GeometryReader { geo in
-            TimelineView(.animation) { timeline in
-                let t = timeline.date.timeIntervalSinceReferenceDate
-                ZStack {
-                    ForEach(0..<stars.count, id: \.self) { i in
-                        let star = stars[i]
-                        let dx = sin(t * star.speed + star.phase) * 10
-                        let dy = cos(t * star.speed * 0.8 + star.phase) * 10
-                        Image(systemName: "star.fill")
-                            .foregroundColor(.black.opacity(Double.random(in: 0.15...0.35)))
-                            .font(.system(size: star.size))
-                            .position(
-                                x: star.x * geo.size.width + dx,
-                                y: star.y * geo.size.height + dy
-                            )
-                    }
-                }
-            }
-        }
-        .allowsHitTesting(false)
     }
 }
 
 #Preview {
     HumanInstructionScreen()
+        .environmentObject(GameStore())
 }
