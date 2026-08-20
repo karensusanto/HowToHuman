@@ -27,7 +27,7 @@ struct HTHOnboardingBackground: View {
                     maxWidth: .infinity,
                     maxHeight: .infinity
                 )
-                .offset(x: -200)
+//                .offset(x: -200)
         }
         .ignoresSafeArea()
     }

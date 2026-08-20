@@ -7,10 +7,88 @@
 
 import SwiftUI
 
-struct orbitView: View {
+struct OrbitView: View {
+    @EnvironmentObject var store: GameStore
+    @Binding var joinRoomPopUp: Bool
+
     var body: some View {
-        Image("earth-perimeter").resizable().scaledToFit().frame(height: 300)
-        Image("earth").resizable().scaledToFit().frame(height: 150)
+            GeometryReader { geo in
+                let diameter = geo.size.height * 0.8
+                let padding = CGFloat(50)
+                
+                ZStack {
+                    // Your orbit/dashed-line image
+                    Image("earth-perimeter")
+                        .resizable()
+                        .frame(
+                            width: diameter,
+                            height: diameter
+                        )
+                    
+                    // Earth
+                    Image("earth")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 300)
+                    
+                    // Ships
+                    if !store.availableRooms.isEmpty {
+                        ForEach(
+                            Array(store.availableRooms.enumerated()),
+                            id: \.element.id
+                        ) { index, room in
+                            
+                            let count = store.availableRooms.count
+                            
+                            // -90° -> +90°
+                            let progress = count == 1
+                            ? 0.5
+                            : Double(index) / Double(count - 1)
+                            
+                            let angle =
+                            -.pi / 2 + progress * .pi
+                            
+                            // Adjust this until it sits exactly
+                            // on your dashed orbit.
+//                            let radius = diameter / 2
+                            let radiusX = diameter / 2 - padding
+                            let radiusY = diameter / 2
+                            
+                            let x =
+                            radiusX * cos(angle)
+                            
+                            let y =
+                            radiusY * sin(angle)
+                            
+                            Button {
+                                store.joiningRoom = room
+                                joinRoomPopUp = true
+                            } label: {
+                                VStack(spacing: 4) {
+                                    Image(room.hostAvatar)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 100)
+                                    
+                                    HTHText(
+                                        title: room.roomName
+                                    ).frame(width: 100).multilineTextAlignment(.center)
+                                }
+                            }
+                            .position(
+                                x: diameter / 2 + x + padding,
+                                y: geo.size.height / 2 + y
+                            )
+                        }
+                    }
+                }
+                .frame(
+                    width: diameter
+                )
+                .offset(
+                    x: -diameter / 2
+                )
+            }
     }
 }
 
@@ -23,8 +101,7 @@ struct LobbySearchScreen: View {
     var body: some View {
         ZStack{
             Color.clear.ignoresSafeArea()
-             
-            orbitView()
+            
             VStack{
                 HStack{
                     BackButton(toState: .home)
@@ -34,34 +111,21 @@ struct LobbySearchScreen: View {
                     Color.clear.frame(width: 40, height: 40)
                 }
                 
-                ScrollView{
-                    ForEach(store.availableRooms, id: \.id){room in
-                        Button{
-                            store.joiningRoom = room
-                            store.joiningRoom = room
-                            joinRoomPopUp.toggle()
-                        }label:{
-                            VStack{
-                                Image("ufo-placeholder").resizable().scaledToFit().frame(width: 100)
-                                Text(room.roomName)
-                            }
-                        }
-                    }
-                }
+                OrbitView(joinRoomPopUp: $joinRoomPopUp)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(maxHeight: .infinity)
                 
                 PrimaryButton(title: "CREATE ROOM", btnHeight: 72){
                     store.joiningRoom = nil
                     store.state = .customizeAlien
                 }
             }.padding()
-                .onAppear {
-                    store.networkManager.startBrowsing(){rooms in
-                        store.availableRooms = rooms
-                    }
-                }
-                .onDisappear {
-                    store.networkManager.stopBrowsing()
-                }
+            .onAppear {
+                store.startBrowsing()
+            }
+            .onDisappear {
+                store.networkManager.stopBrowsing()
+            }
             
             if joinRoomPopUp{
                 JoinRoomPopUp(isPresented: $joinRoomPopUp, room: store.joiningRoom!)

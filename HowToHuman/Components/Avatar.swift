@@ -74,25 +74,44 @@ struct AvatarGridView: View {
 struct AvatarLobbyView: View {
     let player: Player
     @EnvironmentObject var store: GameStore
+    @State private var floating: Bool = false
+    var action: () -> Void
     
-    var body: some View {
-        Button{
+    var playerDisplay: some View{
+        VStack{
             
-        }label:{
-            VStack{
-                Image(player.avatar).resizable().scaledToFit().frame(width: 80)
-                let addition = player.id == store.networkManager.myPeerId ? " (You)" :""
-                let (color, additionColor) =
-                player.id == store.currRoom?.hostID ?
-                (HTHColor.blue, HTHColor.blue) :
-                (Color.white, HTHColor.yellow)
-                
-                HTHText(title: player.name, color: color).multilineTextAlignment(.center)
-                HTHText(title: addition, color: additionColor)
-                
-                
+            let addition = player.id == store.currRoom?.hostID ? " [Host]" :""
+            let color =
+            player.id == store.networkManager.myPeerId ?
+            HTHColor.yellow : Color.white
+            
+            HTHText(title: player.name, font: HTHFont.space_grot, color: color).frame(width: 100).multilineTextAlignment(.center)
+            HTHText(title: addition, font: HTHFont.space_grot, color: color)
+            
+            Image(player.avatar).resizable().scaledToFit().frame(width:100)
+            
+            
+        }
+        .offset(y: floating ? 3.0 : 3.0)
+        .onAppear {
+            withAnimation(.easeInOut(duration: Double.random(in: 1.8...2.6)).repeatForever(autoreverses: true)) {
+                floating = true
             }
         }
+    }
+    
+    var body: some View {
+        if store.networkManager.myPeerId == store.currRoom?.hostID{
+            Button{
+                action()
+            }label:{
+                playerDisplay
+            }
+        }
+        else{
+            playerDisplay
+        }
+        
     }
 }
 

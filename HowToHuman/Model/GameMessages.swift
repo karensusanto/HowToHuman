@@ -63,4 +63,5 @@ enum JoinResponse: String, Codable, Sendable {
     case accepted
     case roomFull
     case readmitted
+    case kicked
 }
