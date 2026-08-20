@@ -59,5 +59,5 @@ struct HTHGameBackground: View {
 }
 
 #Preview {
-    HTHGameBackground()
+    HTHOnboardingBackground()
 }
