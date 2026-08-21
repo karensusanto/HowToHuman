@@ -14,7 +14,7 @@ struct HumanInstructionScreen: View {
     @EnvironmentObject var store: GameStore
 
     @State private var steps: [String] = [""]
-    @State private var timeRemaining: Int = 30
+    @State private var timeRemaining: Int = 60
 
     private let maxSteps = 5
     private let yellowAccent = Color(red: 0.94, green: 0.76, blue: 0.29)
@@ -42,7 +42,13 @@ struct HumanInstructionScreen: View {
         ZStack {
             VStack {
 
-                HTHText(title: "Guide The Alien", size: HTHSize.extraLargeTitle, color: HTHColor.yellow)
+                HStack {
+                    Spacer()
+                    HTHText(title: "Guide The Alien", size: HTHSize.largeTitle, color: HTHColor.yellow)
+                    Spacer()
+                    timerBadge
+                }
+                .padding(.horizontal, 20)
 
                 questionPill
                     .padding(.horizontal, 40)
@@ -179,5 +185,5 @@ struct HumanInstructionScreen: View {
 
 #Preview {
     HumanInstructionScreen()
-        .environmentObject(GameStore())
+        .environmentObject(GameStore()) .environmentObject(MotionManager())
 }
