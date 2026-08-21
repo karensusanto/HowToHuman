@@ -6,14 +6,18 @@
 //
 
 import SwiftUI
+import Combine
 
 struct AlienQuestionScreen: View {
     @EnvironmentObject var store: GameStore
     
     @State private var answerText: String = ""
     @FocusState private var isAnswerFocused: Bool
+    @State private var timeRemaining: Int = 30
     
     private let maxCharacters = 30
+    
+    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     private var isReady: Bool {
          !answerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -38,7 +42,13 @@ struct AlienQuestionScreen: View {
             
             VStack{
                 
-                    HTHText(title: "Ask a Human", size: HTHSize.extraLargeTitle, color: HTHColor.yellow)
+                    HStack {
+                        Spacer()
+                        HTHText(title: "Ask a Human", size: HTHSize.largeTitle, color: HTHColor.yellow)
+                        Spacer()
+                        timerBadge
+                    }
+                    .padding(.horizontal, 20)
                 
                     ZStack(alignment: .top) {
                         Image("spaceship-purple")
@@ -96,10 +106,11 @@ struct AlienQuestionScreen: View {
                             isAnswerFocused = true
                             }
                             .padding(.horizontal)
+                            .padding(.bottom)
                     
                     Text("Keep it simple, ask about things they'd probably do everyday.")
                             .font(.footnote)
-                            .foregroundColor(.white.opacity(0.6))
+                            .foregroundColor(.white)
                             .multilineTextAlignment(.center)
 
                     Spacer()
@@ -118,6 +129,21 @@ struct AlienQuestionScreen: View {
         .frame(maxWidth: .infinity)
         .background {
             HTHGameBackground()
+        }
+        .onReceive(timer) { _ in
+            guard timeRemaining > 0 else { return }
+            timeRemaining -= 1
+        }
+    }
+    
+    private var timerBadge: some View {
+        HStack(spacing: 4) {
+            Text("\(timeRemaining)")
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+            Image(systemName: "clock.fill")
+                .font(.system(size: 14))
+                .foregroundColor(.white)
         }
     }
 }
@@ -159,4 +185,5 @@ struct Triangle: Shape {
 
 #Preview {
     AlienQuestionScreen().environmentObject(GameStore())
+        .environmentObject(MotionManager())
 }
