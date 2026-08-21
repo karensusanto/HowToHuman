@@ -325,7 +325,7 @@ final class GameStore: ObservableObject {
         currentConnections.removeValue(forKey: leavingPlayer.id)
         
         if currRoom?.players.count == 1 && phase != .none{ // game started, only host left in the room
-            clearGame()
+            clearGame(stopAdvertising: false)
             return
         }
         
@@ -501,7 +501,7 @@ final class GameStore: ObservableObject {
         }
     }
     
-    func clearGame(){
+    func clearGame(stopAdvertising: Bool = true){
         self.currRoom = nil
         self.state = .lobbySearch
         self.joiningRoom = nil
@@ -519,12 +519,15 @@ final class GameStore: ObservableObject {
         self.myGameData.answer = nil
         self.myGameData.experience = nil
         self.myGameData.vote = nil
+        self.playerGameDataList.append(myGameData)
         self.myPlayerData.name = ""
         self.myPlayerData.avatar = ""
         self.receivedGameData = nil
         self.readyPlayers = 0
         self.submittedQuestions = 0
-        networkManager.stop()
+        if stopAdvertising{
+            networkManager.stop()
+        }
     }
     
     func disconnectGracefully(){
