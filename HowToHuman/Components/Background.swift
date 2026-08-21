@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct HTHOnboardingBackground: View {
+    @StateObject var motion: MotionManager = MotionManager()
     var bgImage: String = "stars-bg"
     var body: some View {
         ZStack {
@@ -27,7 +28,15 @@ struct HTHOnboardingBackground: View {
                     maxWidth: .infinity,
                     maxHeight: .infinity
                 )
-//                .offset(x: -200)
+                .ignoresSafeArea()
+                .scaleEffect(1.15)
+                .offset(x: CGFloat(motion.roll), y: CGFloat(motion.pitch))
+                .onAppear{
+                    motion.startUpdates()
+                }
+                .onDisappear {
+                    motion.stopUpdates()
+                }
         }
         .ignoresSafeArea()
     }
