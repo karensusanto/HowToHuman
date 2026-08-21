@@ -43,6 +43,7 @@ struct AlienQuestionScreen: View {
             VStack{
                 
                     HStack {
+                        Color.clear.frame(width: 40, height: 40)
                         Spacer()
                         HTHText(title: "Ask a Human", size: HTHSize.largeTitle, color: HTHColor.yellow)
                         Spacer()
