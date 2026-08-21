@@ -12,11 +12,17 @@ struct HowToHumanApp: App {
     
     @StateObject private var store = GameStore()
     @StateObject private var motion: MotionManager = MotionManager()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environmentObject(store).environmentObject(motion)
+                .onChange(of: scenePhase) { oldPhase, newPhase in
+                    if newPhase == .background {
+                        store.disconnectGracefully()
+                    }
+                }
         }
     }
 }
