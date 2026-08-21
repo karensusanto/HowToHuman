@@ -9,9 +9,14 @@ import SwiftUI
 
 @main
 struct HowToHumanApp: App {
+    
+    @StateObject private var store = GameStore()
+    @StateObject private var motion: MotionManager = MotionManager()
+
     var body: some Scene {
         WindowGroup {
-            RootView().preferredColorScheme(.dark)
+            RootView()
+                .environmentObject(store).environmentObject(motion)
         }
     }
 }

@@ -8,8 +8,7 @@
 import SwiftUI
 
 struct RootView: View {
-    @StateObject private var store = GameStore()
-
+    @EnvironmentObject var store: GameStore
     var body: some View {
         Group {
             switch store.state {
@@ -37,16 +36,9 @@ struct RootView: View {
                 EmptyView()
             }
         }
-        .environmentObject(store)
         .preferredColorScheme(.dark)
         .animation(.easeInOut(duration: 0.35), value: store.state)
         .transition(.opacity)
-//        .overlay {
-//            if store.isMigratingHost {
-//                ReconnectingOverlay()
-//            }
-//        }
-//        .animation(.easeInOut(duration: 0.25), value: store.isMigratingHost)
     }
 }
 
