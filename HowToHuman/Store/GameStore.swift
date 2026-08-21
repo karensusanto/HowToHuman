@@ -57,6 +57,8 @@ final class GameStore: ObservableObject {
     @Published var receivedGameData: PlayerGameData?
     @Published var bubbles: [Bubble] = []
     
+    private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
+    
     init() {
         networkManager = NetworkManager()
         
@@ -372,7 +374,38 @@ final class GameStore: ObservableObject {
         networkManager.stop()
     }
     
-    func leaveRoomAsHost(){
+    func disconnectGracefully(){
+        // 1. Request extra background execution time from iOS
+        backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "GameDisconnect") {
+            self.endBackgroundTask()
+        }
+        
+        if connectionToHost == nil{
+            leaveRoomAsHost(){ [weak self] in
+                self?.endBackgroundTask()
+            }
+        }
+        else{
+            guard let connection = connectionToHost else {
+                endBackgroundTask()
+                return
+            }
+            
+            leaveRoomAsParticipant(on: connection){ [weak self] in
+                self?.endBackgroundTask()
+            }
+        }
+                
+    }
+    
+    private func endBackgroundTask() {
+        if backgroundTaskID != .invalid {
+            UIApplication.shared.endBackgroundTask(backgroundTaskID)
+            backgroundTaskID = .invalid
+        }
+    }
+    
+    func leaveRoomAsHost(completion: (() -> Void)? = nil){
         // delete player's game data if still in asking phase
         if phase == .askHuman {
             playerGameDataList.removeAll(where: { $0.id == networkManager.myPeerId })
@@ -388,11 +421,12 @@ final class GameStore: ObservableObject {
         
         print("Send data to new host")
         sendDataToOnePlayer(on: currentConnections[currRoom!.hostID]!, migrateHost: true)
+        completion?()
     }
     
-    func leaveRoomAsParticipant(on connection: NWConnection){
+    func leaveRoomAsParticipant(on connection: NWConnection, completion: @escaping () -> Void){
         sendLeaveRoomMsg(on: connection)
-        clearGame()
+        completion()
     }
     
     func sendLeaveRoomMsg(on connection: NWConnection) {

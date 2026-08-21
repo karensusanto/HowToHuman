@@ -59,7 +59,9 @@ struct ExitRoomPopUp: View {
                 }
                 
                 else{
-                    store.leaveRoomAsParticipant(on: store.connectionToHost!)
+                    store.leaveRoomAsParticipant(on: store.connectionToHost!){
+                        store.clearGame()
+                    }
                 }
                 
                 isPresented = false
