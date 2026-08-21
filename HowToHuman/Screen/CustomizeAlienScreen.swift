@@ -139,14 +139,16 @@ struct CustomizeAlienScreen: View {
                     if store.joiningRoom == nil {
                         let host = Player(id: store.networkManager.myPeerId, name: playerName, avatar: selectedAvatar!)
                         let room = Room(name: "\(host.name)'s Satellite", hostID: host.id, players: [host])
+                        store.playerGameDataList.append(store.myGameData)
                         
                         store.networkManager.startAdvertising(room: room)
                         store.currRoom = room
                         store.state = .lobby
                     }
                     else{//joining room
-                        let player = Player(id: store.networkManager.myPeerId, name: playerName, avatar: selectedAvatar!)
-                        store.networkManager.join(room: store.joiningRoom!, player: player)
+                        store.myPlayerData.name = playerName
+                        store.myPlayerData.avatar = selectedAvatar!
+                        store.join()
                     }
                     
                     
@@ -162,5 +164,5 @@ struct CustomizeAlienScreen: View {
 }
 
 #Preview {
-    CustomizeAlienScreen().environmentObject(GameStore()).preferredColorScheme(.dark)
+    CustomizeAlienScreen().environmentObject(GameStore()).environmentObject(MotionManager())
 }

@@ -148,9 +148,7 @@ struct LobbyScreen: View {
                         }
                         
                         PrimaryButton(title: "START", btnHeight: 72, isDisabled: store.currRoom!.players.count < 2){
-                            store.phase = .askHuman
-                            store.state = .transition
-                            store.sendDataToPlayers()
+                            store.next()
                         }
                     }
                 }
@@ -166,9 +164,7 @@ struct LobbyScreen: View {
             .padding()
             
             
-            if store.showExitRoomPopUp{
-                ExitRoomPopUp(isPresented: $store.showExitRoomPopUp)
-            }
+            
             
             let currTimeModeIdx = switch store.currRoom?.timerMode{
             case .fast: 0
@@ -179,8 +175,11 @@ struct LobbyScreen: View {
             }
             
             VStack{
+                if store.showExitRoomPopUp{
+                    ExitRoomPopUp(isPresented: $store.showExitRoomPopUp)
+                }
                 if store.showSettingPopUp{
-                    RoomSettingPopUp(isPresented: $store.showSettingPopUp, value: Float(currTimeModeIdx))
+                    TimerSettingPopUp(isPresented: $store.showSettingPopUp, value: Float(currTimeModeIdx))
                 }
                 if store.showKickPlayerPopUp{
                     KickPlayerPopUp(isPresented: $store.showKickPlayerPopUp, player: selectedPlayer)
@@ -197,5 +196,5 @@ struct LobbyScreen: View {
 }
 
 #Preview {
-    LobbyScreen().environmentObject(GameStore()).preferredColorScheme(.dark)
+    LobbyScreen().environmentObject(GameStore()).environmentObject(MotionManager())
 }

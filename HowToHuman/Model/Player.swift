@@ -9,16 +9,12 @@ import SwiftUI
 
 struct Player: Codable {
     let id: UUID
-    let name: String
-    let avatar: String
+    var name: String
+    var avatar: String
 }
 
-extension Player {
-    var avatarImage: Image {
-        Image(avatar)
-    }
-}
-
-struct LeavingPlayer: Codable{
-    let id: UUID
-}
+//extension Player {
+//    var avatarImage: Image {
+//        Image(avatar)
+//    }
+//}

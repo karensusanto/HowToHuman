@@ -22,17 +22,23 @@ struct RootView: View {
                 CustomizeAlienScreen()
             case .lobby:
                 LobbyScreen()
-            case .transition:
+            case .transitionToVoting,
+                    .transitionToAskHuman,
+                    .transitionToGuideAliens,
+                    .transitionToShareExperience,
+                    .transitionToNarrateExperience:
                 TransitionScreen()
             case .askHuman:
                 AlienQuestionScreen()
-            case .answerAlien:
+            case .guideAlien:
                 HumanInstructionScreen()
             case .narrateExperience:
                 AlienNarrationScreen()
-            case .reviewExperience:
+            case .shareExperience:
                 EmptyView()
             case .voting:
+                EmptyView()
+            case .result:
                 EmptyView()
             }
         }
@@ -43,5 +49,5 @@ struct RootView: View {
 }
 
 #Preview {
-    RootView().environmentObject(GameStore())
+    RootView().environmentObject(GameStore()).environmentObject(MotionManager())
 }

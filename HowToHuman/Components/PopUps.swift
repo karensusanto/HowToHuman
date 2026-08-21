@@ -192,7 +192,7 @@ struct TimerCard: View {
     }
 }
 
-struct RoomSettingPopUp: View {
+struct TimerSettingPopUp: View {
     @EnvironmentObject var store: GameStore
     @Binding var isPresented: Bool
     @State var value: Float
