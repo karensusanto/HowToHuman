@@ -43,6 +43,7 @@ struct HumanInstructionScreen: View {
             VStack {
 
                 HStack {
+                    Color.clear.frame(width: 40, height: 40)
                     Spacer()
                     HTHText(title: "Guide The Alien", size: HTHSize.largeTitle, color: HTHColor.yellow)
                     Spacer()
