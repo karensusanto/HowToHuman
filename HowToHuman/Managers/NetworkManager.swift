@@ -34,7 +34,13 @@ class NetworkManager: ObservableObject{
             let listener = try NWListener(using: parameters)
             
             
-            let metadata = ["roomID": room.id.uuidString, "hostID": room.hostID.uuidString, "hostAvatar": room.players.first!.avatar]
+            let metadata = [
+                "roomID": room.id.uuidString,
+                "hostID": room.hostID.uuidString,
+                "hostAvatar": room.players.first!.avatar,
+                "playerCount": "\(room.players.count)",
+                "maxPlayers": "\(room.maxPlayers)"
+            ]
             
             let txtRecord = NWTXTRecord(metadata)
             
@@ -296,6 +302,16 @@ class NetworkManager: ObservableObject{
                 else {
                     continue
                 }
+                guard
+                    let playerCount = txtRecord["playerCount"]
+                else {
+                    continue
+                }
+                guard
+                    let maxPlayers = txtRecord["maxPlayers"]
+                else {
+                    continue
+                }
                 print("room id:", roomIDString)
             
                 let room = DiscoveredRoom(
@@ -303,7 +319,9 @@ class NetworkManager: ObservableObject{
                     roomName: name,
                     roomEndpoint: result.endpoint,
                     hostID: hostID,
-                    hostAvatar: hostAvatar
+                    hostAvatar: hostAvatar,
+                    playerCount: playerCount,
+                    maxPlayers: maxPlayers
                 )
                 discoveredRooms.append(room)
                 

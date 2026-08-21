@@ -11,30 +11,42 @@ struct PopUpBuilder: View {
     @Binding var isPresented: Bool
     var title: String
     var subtitle: String
+    var leftBtnText: String
+    var rightBtnText: String
+    var leftBtnColor: Color
+    var rightBtnColor: Color
     var action: () -> Void
     
     var body: some View {
-        VStack{
-            HTHText(title: title)
-            HTHText(title: subtitle)
+        VStack(spacing: 20){
+            VStack{
+                HTHText(title: title, font: HTHFont.space_grot)
+                HTHText(title: subtitle, size: HTHSize.caption, font: HTHFont.space_grot)
+            }
             
             HStack{
-                SecondaryButton(title:"No"){
+                PrimaryButton(title:leftBtnText, btnColor: leftBtnColor){
                     isPresented = false
                 }
                 
-                PrimaryButton(title:"Yes"){
+                PrimaryButton(title:rightBtnText, btnColor: rightBtnColor){
                     action()
                 }
             }
-        }.padding()
-            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.black))
+        }
+        .padding()
+        .padding(.horizontal, 20)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.black).stroke(HTHColor.purple, lineWidth: 1)
+                .shadow(color: HTHColor.purple.opacity(0.5), radius: 16)
+                .shadow(color: HTHColor.purple.opacity(0.3), radius: 30)
+        )
     }
 }
 
 #Preview {
     @Previewable @State var isPresented: Bool = true
-    PopUpBuilder(isPresented: $isPresented, title: "Title", subtitle: "subtitle"){
+    PopUpBuilder(isPresented: $isPresented, title: "Title", subtitle: "subtitle", leftBtnText: "No", rightBtnText: "Yes", leftBtnColor: .white.opacity(0.3), rightBtnColor: HTHColor.green){
         
     }
 }
@@ -46,7 +58,7 @@ struct ExitRoomPopUp: View {
     @State var subTitle: String = ""
     
     var body: some View {
-            PopUpBuilder(isPresented: $isPresented, title: "Exit \(roomName)?", subtitle: subTitle){
+        PopUpBuilder(isPresented: $isPresented, title: "Exit \(roomName)?", subtitle: subTitle, leftBtnText: "No", rightBtnText: "Yes", leftBtnColor: HTHColor.green, rightBtnColor: .white.opacity(0.3)){
                 
                 //check if the room is gonna be empty, delete room
                 if store.currRoom?.players.count == 1{
@@ -87,7 +99,7 @@ struct JoinRoomPopUp: View {
     @State var room: DiscoveredRoom
     
     var body: some View {
-        PopUpBuilder(isPresented: $isPresented, title: "Join \(room.roomName)?", subtitle: ""){
+        PopUpBuilder(isPresented: $isPresented, title: "Join \(room.roomName)?", subtitle: "", leftBtnText: "No", rightBtnText: "Join", leftBtnColor: .white.opacity(0.3), rightBtnColor: HTHColor.green){
                 isPresented = false
                 store.state = .customizeAlien
         }
@@ -102,7 +114,7 @@ struct RoomFullPopUp: View {
         VStack{
             HTHText(title: "Sorry, \(room.roomName) is full")
             
-            SecondaryButton(title:"OK"){
+            PrimaryButton(title:"OK"){
                 isPresented = false
             }
         }
@@ -117,66 +129,103 @@ struct KickPlayerPopUp: View {
     @State var player: Player
     
     var body: some View {
-        PopUpBuilder(isPresented: $isPresented, title: "Remove \(player.name) from this room?", subtitle: ""){
+        PopUpBuilder(isPresented: $isPresented, title: "Kick \(player.name)?", subtitle: "", leftBtnText: "No", rightBtnText: "Kick", leftBtnColor: HTHColor.green, rightBtnColor: .white.opacity(0.3)){
             store.kickPlayer(player)
             isPresented = false
         }
     }
 }
 
+struct TimerCard: View {
+    @State var timerMode: TimerMode
+    @Binding var selectedTimerMode: TimerMode
+    let selectedBorderColor = HTHColor.purple
+    let unselectedBorderColor = Color.white.opacity(0.5)
+    let selectedTextColor = Color.white
+    let unselectedTextColor = Color.white.opacity(0.5)
+    @State var isSelected: Bool = false
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20){
+            let title = timerMode.label
+            HTHText(title: title != "NORMAL" ? title :  title + "(Default)", color: isSelected ? selectedTextColor : unselectedTextColor)
+            HStack(alignment: .center, spacing: 10){
+                VStack(alignment: .leading, spacing: 10){
+                    HTHText(title: "Phase 1 - Ask", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                    HTHText(title: "Phase 2 - Guide", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                    HTHText(title: "Phase 3 - Follow", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                }
+                VStack(alignment: .leading, spacing: 10){
+                    HTHText(title: ":", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                    HTHText(title: ":", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                    HTHText(title: ":", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                }
+                VStack(alignment: .leading, spacing: 10){
+                    HTHText(title: "\(timerMode.seconds(for: .question) ?? 0) Seconds", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                    HTHText(title: "\(timerMode.seconds(for: .steps) ?? 0) Seconds", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                    HTHText(title: "\(timerMode.seconds(for: .experience) ?? 0) Seconds", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                }
+            }
+        }
+        .padding()
+        .background(isSelected ? .black : .black.opacity(0.5))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(isSelected ? selectedBorderColor : unselectedBorderColor, lineWidth: 2)
+                .shadow(
+                    color: selectedBorderColor.opacity(0.8),
+                    radius: isSelected ? 18 : 0
+                )
+                .shadow(
+                    color: selectedBorderColor.opacity(0.5),
+                    radius: isSelected ? 30 : 0
+                )
+        )
+        .onAppear{
+            isSelected = selectedTimerMode.label == timerMode.label
+        }
+        .onChange(of: selectedTimerMode){
+            isSelected = selectedTimerMode.label == timerMode.label
+        }
+        
+    }
+}
 
 struct RoomSettingPopUp: View {
     @EnvironmentObject var store: GameStore
     @Binding var isPresented: Bool
     @State var value: Float
+    @State var selectedTimerMode: TimerMode = .normal
+    
     
     var body: some View {
         ZStack{
             Color.clear.ignoresSafeArea()
             VStack(spacing: 40){
-                HTHText(title: "Room Settings", size: HTHSize.title, color: HTHColor.yellow)
-                VStack(alignment: .leading, spacing: 20){
-                    HTHText(title: "Timer")
-                    Slider(value: $value, in: 0...2, step: 1){
-                        HTHText(title: "Room Settings")
-                    }
-                    
-                    HStack{
-                        HTHText(title: "Fast")
-                        Spacer()
-                        HTHText(title: "Normal")
-                        Spacer()
-                        HTHText(title: "Slow")
+                HTHText(title: "Timer Settings", size: HTHSize.title, color: HTHColor.yellow)
+                
+                VStack(spacing: 20){
+                    ForEach(TimerMode.allCases, id: \.id){mode in
+                        Button{
+                            selectedTimerMode = mode
+                        }label:{
+                            TimerCard(timerMode: mode, selectedTimerMode: $selectedTimerMode)
+                        }
+                        .scaleEffect(selectedTimerMode == mode ? 1 : 0.9)
                     }
                 }
-                let timerMode = switch value{
-                case 0:
-                    TimerMode.fast
-                case 1:
-                    TimerMode.normal
-                case 2:
-                    TimerMode.slow
-                default:
-                    TimerMode.normal
-                }
-                Spacer()
-                let questionTime = timerMode.seconds(for: .question) ?? 0
-                let answerTime = timerMode.seconds(for: .steps) ?? 0
-                let experienceTime = timerMode.seconds(for: .experience) ?? 0
-                HTHText(title: "Question time: \(questionTime) seconds")
-                HTHText(title: "Answer time: \(answerTime) seconds")
-                HTHText(title: "Write Experience time: \(experienceTime) seconds")
+                
                 Spacer()
                 Color.clear
-                PrimaryButton(title: "DONE"){
-                    store.currRoom?.timerMode = timerMode
+                PrimaryButton(title: "DONE", btnHeight: 72){
+                    store.currRoom?.timerMode = selectedTimerMode
                     isPresented = false
                 }
             }
             .padding()
         }
         .background(HTHOnboardingBackground())
-//        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.black))
     }
 }
 

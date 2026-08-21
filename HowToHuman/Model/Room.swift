@@ -86,12 +86,16 @@ struct DiscoveredRoom: Identifiable{
     let roomEndpoint: NWEndpoint
     let hostID: UUID
     let hostAvatar: String
+    let playerCount: String
+    let maxPlayers: String
     
-    init(id: UUID, roomName: String, roomEndpoint: NWEndpoint, hostID: UUID, hostAvatar: String) {
+    init(id: UUID, roomName: String, roomEndpoint: NWEndpoint, hostID: UUID, hostAvatar: String, playerCount: String, maxPlayers: String) {
         self.id = id
         self.roomName = roomName
         self.roomEndpoint = roomEndpoint
         self.hostID = hostID
         self.hostAvatar = hostAvatar
+        self.playerCount = playerCount
+        self.maxPlayers = maxPlayers
     }
 }

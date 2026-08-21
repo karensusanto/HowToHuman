@@ -30,15 +30,17 @@ struct ExitRoomButton: View {
     
     var body: some View {
         Button{ store.showExitRoomPopUp = true }label:{
-            Image(systemName: "door.left.hand.open")
-                .foregroundStyle(Color.white)
+            Image(systemName: "rectangle.portrait.and.arrow.right")
+                .scaleEffect(x: -1, y: 1)
+                .foregroundStyle(Color.white).bold()
+                .font(.system(size: HTHSize.title))
                 .padding()
         }
         .clipShape(Circle())
-//        .overlay(
-//            Circle()
-//                .stroke(Color.white.opacity(0.6), lineWidth: 1)
-//        )
+        .background(
+            Circle()
+                .fill(HTHColor.purple)
+        )
     }
 }
 
@@ -47,6 +49,7 @@ struct PrimaryButton: View {
     @State var size: CGFloat = 32
     @State var btnHeight: CGFloat = 56
     var isDisabled: Bool = false
+    var btnColor: Color = HTHColor.purple
     var action: () -> Void
 
     @State private var isPressed = false
@@ -65,7 +68,7 @@ struct PrimaryButton: View {
             GeometryReader { geometry in
                 ZStack{
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(isDisabled ? Color.white.opacity(0.3) : HTHColor.purple)
+                        .fill(isDisabled ? Color.white.opacity(0.3) : btnColor)
                     HStack{
                         Spacer()
                         Image("button-reflection").resizable().frame(width: geometry.size.width * 0.5, height: btnHeight)
@@ -86,7 +89,7 @@ struct PrimaryButton: View {
         )
         .animation(.easeOut(duration: 0.15), value: isPressed)
         .shadow(
-            color: HTHColor.purple.opacity(0.3),
+            color: btnColor.opacity(0.3),
             radius: 30
         )
     }
@@ -100,40 +103,40 @@ struct PrimaryButton: View {
     }.padding()
 }
 
-struct SecondaryButton: View {
-    let title: String
-    @State var size: CGFloat = 25
-    @State var btnHeight: CGFloat = 56
-    var isDisabled: Bool = false
-    var action: () -> Void
-
-    @State private var isPressed = false
-
-    var body: some View {
-        Button {
-            action()
-        } label: {
-            HTHText(title: title, size: size)
-            
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: btnHeight)
-        .foregroundStyle(Color.white)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.white.opacity(0.3))
-        )
-        .scaleEffect(isPressed ? 0.97 : 1.0)
-        .opacity(isDisabled ? 0.6 : 1.0)
-        .disabled(isDisabled)
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in isPressed = true }
-                .onEnded { _ in isPressed = false }
-        )
-        .animation(.easeOut(duration: 0.15), value: isPressed)
-    }
-}
+//struct SecondaryButton: View {
+//    let title: String
+//    @State var size: CGFloat = 25
+//    @State var btnHeight: CGFloat = 56
+//    var isDisabled: Bool = false
+//    var action: () -> Void
+//
+//    @State private var isPressed = false
+//
+//    var body: some View {
+//        Button {
+//            action()
+//        } label: {
+//            HTHText(title: title, size: size)
+//            
+//        }
+//        .frame(maxWidth: .infinity)
+//        .frame(height: btnHeight)
+//        .foregroundStyle(Color.white)
+//        .background(
+//            RoundedRectangle(cornerRadius: 16, style: .continuous)
+//                .fill(Color.white.opacity(0.3))
+//        )
+//        .scaleEffect(isPressed ? 0.97 : 1.0)
+//        .opacity(isDisabled ? 0.6 : 1.0)
+//        .disabled(isDisabled)
+//        .simultaneousGesture(
+//            DragGesture(minimumDistance: 0)
+//                .onChanged { _ in isPressed = true }
+//                .onEnded { _ in isPressed = false }
+//        )
+//        .animation(.easeOut(duration: 0.15), value: isPressed)
+//    }
+//}
 
 
 struct OpenSettingButton: View {

@@ -36,6 +36,7 @@ extension Color {
 
 struct HTHColor{
     static let purple: Color = Color(hex: "#AC64E1")
+    static let lightpurple: Color = Color(hex: "#CBABEA")
     static let yellow: Color = Color(hex: "#FFE032")
     static let green: Color = Color(hex: "#06B04B")
     static let blue: Color = Color(hex: "#5171FF")
