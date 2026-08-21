@@ -64,12 +64,13 @@ struct HumanInstructionScreen: View {
                     VStack(spacing: 12) {
                         ForEach(steps.indices, id: \.self) { index in
                             stepField(index: index)
-                                .onTapGesture {
-                                    if readyMsgSubmitted{
-                                        store.sendReadyStatus(false)
-                                        readyMsgSubmitted = false
-                                    }
-                                }
+                                
+                        }
+                        .onTapGesture {
+                            if readyMsgSubmitted{
+                                store.sendReadyStatus(false)
+                                readyMsgSubmitted = false
+                            }
                         }
                         if canAddStep {
                             addStepButton
@@ -173,10 +174,19 @@ struct HumanInstructionScreen: View {
                 .frame(width: 30, height: 30)
                 .background(Circle().fill(Color.black))
 
-            TextField("Write the instructions here..", text: $steps[index], axis: .vertical)
-                .font(.custom(HTHFont.space_grot, size: 16))
-                .foregroundStyle(.black)
-                .lineLimit(1...4)
+            ZStack(alignment: .topLeading) {
+                if steps[index] == "" {
+                    HTHText(title: "Write the instructions here...", font: HTHFont.space_grot, color: .black.opacity(0.5))
+                }
+
+                TextField("", text: $steps[index], axis: .vertical)
+                    .font(.custom(HTHFont.space_grot, size: 16))
+                    .foregroundStyle(.black)
+                    .lineLimit(1...4)
+            }
+                
+            
+            
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
