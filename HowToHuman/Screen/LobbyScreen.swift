@@ -132,7 +132,7 @@ struct LobbyScreen: View {
                     Spacer()
                     VStack{
                         HTHText(title: store.currRoom?.roomName ?? "Lobby", size: HTHSize.title, color: HTHColor.yellow)
-                        HTHText(title: "[\(store.currRoom?.players.count ?? 0) / \(store.currRoom?.maxPlayers ?? 8) players]", font: HTHFont.space_grot, color: HTHColor.yellow)
+                        HTHText(title: "(\(store.currRoom?.players.count ?? 0) / \(store.currRoom?.maxPlayers ?? 8) Players)", font: HTHFont.space_grot, weight: .bold, color: HTHColor.yellow)
                     }
                     Spacer()
                     Color.clear.frame(width: 40, height: 40)
@@ -177,12 +177,15 @@ struct LobbyScreen: View {
             default:
                 1
             }
-            if store.showSettingPopUp{
-                RoomSettingPopUp(isPresented: $store.showSettingPopUp, value: Float(currTimeModeIdx))
-            }
-            if store.showKickPlayerPopUp{
-                KickPlayerPopUp(isPresented: $store.showKickPlayerPopUp, player: selectedPlayer)
-            }
+            
+            VStack{
+                if store.showSettingPopUp{
+                    RoomSettingPopUp(isPresented: $store.showSettingPopUp, value: Float(currTimeModeIdx))
+                }
+                if store.showKickPlayerPopUp{
+                    KickPlayerPopUp(isPresented: $store.showKickPlayerPopUp, player: selectedPlayer)
+                }
+            }.padding()
         }
         .frame(maxWidth: .infinity)
         .background {

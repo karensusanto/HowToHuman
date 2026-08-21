@@ -36,6 +36,7 @@ enum GamePhase: Codable {
 @MainActor
 final class GameStore: ObservableObject {
     let networkManager: NetworkManager
+    @EnvironmentObject var motionManager: MotionManager
     
     @Published var state: AppState = .home
     @Published var phase: GamePhase = .none
@@ -400,6 +401,7 @@ final class GameStore: ObservableObject {
     
     private func endBackgroundTask() {
         if backgroundTaskID != .invalid {
+            motionManager.stopUpdates()
             UIApplication.shared.endBackgroundTask(backgroundTaskID)
             backgroundTaskID = .invalid
         }

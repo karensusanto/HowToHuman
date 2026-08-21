@@ -48,9 +48,6 @@ struct OrbitView: View {
                             let angle =
                             -.pi / 2 + progress * .pi
                             
-                            // Adjust this until it sits exactly
-                            // on your dashed orbit.
-//                            let radius = diameter / 2
                             let radiusX = diameter / 2 - padding
                             let radiusY = diameter / 2
                             
@@ -71,7 +68,10 @@ struct OrbitView: View {
                                         .frame(width: 100)
                                     
                                     HTHText(
-                                        title: room.roomName
+                                        title: room.roomName, size: HTHSize.caption, font: HTHFont.space_grot, weight: .medium
+                                    ).frame(width: 100).multilineTextAlignment(.center)
+                                    HTHText(
+                                        title: "(\(room.playerCount) / \(room.maxPlayers) Players)", size: HTHSize.caption, font: HTHFont.space_grot, weight: .medium
                                     ).frame(width: 100).multilineTextAlignment(.center)
                                 }
                             }
@@ -106,9 +106,9 @@ struct LobbySearchScreen: View {
                 HStack{
                     BackButton(toState: .home)
                     Spacer()
-                    HTHText(title: "JOIN A ROOM", size: HTHSize.title, color: HTHColor.yellow)
-                    Spacer()
-                    Color.clear.frame(width: 40, height: 40)
+//                    HTHText(title: "JOIN A ROOM", size: HTHSize.title, color: HTHColor.yellow)
+//                    Spacer()
+//                    Color.clear.frame(width: 40, height: 40)
                 }
                 
                 OrbitView(joinRoomPopUp: $joinRoomPopUp)
@@ -127,13 +127,16 @@ struct LobbySearchScreen: View {
                 store.networkManager.stopBrowsing()
             }
             
-            if joinRoomPopUp{
-                JoinRoomPopUp(isPresented: $joinRoomPopUp, room: store.joiningRoom!)
-            }
-            
-            if store.showRoomFullPopUp{
-                RoomFullPopUp(isPresented: $store.showRoomFullPopUp, room: store.joiningRoom!)
-            }
+            VStack{
+                
+                if joinRoomPopUp{
+                    JoinRoomPopUp(isPresented: $joinRoomPopUp, room: store.joiningRoom!)
+                }
+                
+                if store.showRoomFullPopUp{
+                    RoomFullPopUp(isPresented: $store.showRoomFullPopUp, room: store.joiningRoom!)
+                }
+            }.padding()
         }
         .frame(maxWidth: .infinity)
         .background {
@@ -143,5 +146,5 @@ struct LobbySearchScreen: View {
 }
 
 #Preview {
-    LobbySearchScreen().environmentObject(GameStore()).preferredColorScheme(.dark)
+    LobbySearchScreen().environmentObject(GameStore()).environmentObject(MotionManager())
 }

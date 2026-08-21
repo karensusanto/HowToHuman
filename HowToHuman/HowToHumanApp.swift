@@ -19,8 +19,10 @@ struct HowToHumanApp: App {
             RootView()
                 .environmentObject(store).environmentObject(motion)
                 .onChange(of: scenePhase) { oldPhase, newPhase in
-                    if newPhase == .background {
-                        store.disconnectGracefully()
+                    if newPhase == .inactive {
+                        if store.currRoom != nil {
+                            store.disconnectGracefully()
+                        }
                     }
                 }
         }
