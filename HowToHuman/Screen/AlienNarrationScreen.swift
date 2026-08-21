@@ -50,14 +50,13 @@ struct AlienNarrationScreen: View {
                 .padding(.top, 20)
 
                 questionPill
-                    .padding(.horizontal, 40)
-                    .padding(.top, 16)
+                    .padding(.horizontal, 10)
+                    .padding(.top, 20)
 
                 stepCarousel
 
                 narrationField
-                    .padding(.horizontal, 5)
-                    .padding(.top, 10)
+                    .padding(.horizontal, 10)
 
                 Spacer()
 
@@ -114,7 +113,7 @@ struct AlienNarrationScreen: View {
     }
 
     private var stepCarousel: some View {
-        HStack(spacing: 4) {
+        HStack(spacing : 0) {
             navArrowButton(systemName: "chevron.left", isEnabled: currentIndex > 0) {
                 withAnimation { currentIndex -= 1 }
             }
@@ -132,14 +131,14 @@ struct AlienNarrationScreen: View {
                 withAnimation { currentIndex += 1 }
             }
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal,1)
     }
 
     @ViewBuilder
     private func navArrowButton(systemName: String, isEnabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 20, weight: .bold))
+                .font(.system(size: 20, weight: .semibold, design: .rounded))
                 .foregroundColor(purpleGlow)
                 .frame(width: 28, height: 28)
         }
