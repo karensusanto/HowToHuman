@@ -144,8 +144,9 @@ struct CustomizeAlienScreen: View {
                 Spacer()
                 PrimaryButton(title: "DONE", isDisabled: playerName.isEmpty){
                     if store.joiningRoom == nil {
-                        let host = Player(id: store.networkManager.myPeerId, name: playerName, avatar: selectedAvatar!)
-                        let room = Room(name: "\(host.name)'s Satellite", hostID: host.id, players: [host])
+                        store.myPlayerData.name = playerName
+                        store.myPlayerData.avatar = selectedAvatar!
+                        let room = Room(name: "\(store.myPlayerData.name)'s Satellite", hostID: store.myPlayerData.id, players: [store.myPlayerData])
                         store.playerGameDataList.append(store.myGameData)
                         
                         store.networkManager.startAdvertising(room: room)
