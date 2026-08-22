@@ -57,5 +57,11 @@ struct HomeScreen: View {
 }
 
 #Preview {
-    HomeScreen().environmentObject(GameStore()).environmentObject(MotionManager())
+    let motionManager = MotionManager()
+    let store = GameStore(
+        motionManager: motionManager
+    )
+    HomeScreen()
+    .environmentObject(store)
+    .environmentObject(motionManager)
 }

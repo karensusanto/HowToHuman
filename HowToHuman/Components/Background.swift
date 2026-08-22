@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct HTHOnboardingBackground: View {
-    @EnvironmentObject var motion: MotionManager
+    @EnvironmentObject var motionManager: MotionManager
     var bgImage: String = "stars-bg"
     var body: some View {
         ZStack {
@@ -30,9 +30,9 @@ struct HTHOnboardingBackground: View {
                 )
                 .ignoresSafeArea()
                 .scaleEffect(1.15)
-                .offset(x: CGFloat(motion.roll), y: CGFloat(motion.pitch))
+                .offset(x: CGFloat(motionManager.roll), y: CGFloat(motionManager.pitch))
                 .onAppear{
-                    motion.startUpdates()
+                    motionManager.startUpdates()
                 }
 //                .onDisappear {
 //                    motion.stopUpdates()
@@ -43,7 +43,7 @@ struct HTHOnboardingBackground: View {
 }
 
 struct HTHGameBackground: View {
-    @EnvironmentObject var motion: MotionManager
+    @EnvironmentObject var motionManager: MotionManager
     var bgImage: String = "stars-bg-2"
     var body: some View {
         ZStack {
@@ -65,13 +65,10 @@ struct HTHGameBackground: View {
                 )
                 .ignoresSafeArea()
                 .scaleEffect(1.15)
-                .offset(x: CGFloat(motion.roll), y: CGFloat(motion.pitch))
+                .offset(x: CGFloat(motionManager.roll), y: CGFloat(motionManager.pitch))
                 .onAppear{
-                    motion.startUpdates()
+                    motionManager.startUpdates()
                 }
-//                .onDisappear {
-//                    motion.stopUpdates()
-//                }
         }
         .ignoresSafeArea()
     }

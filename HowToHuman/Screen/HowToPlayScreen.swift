@@ -84,5 +84,11 @@ struct HowToPlayScreen: View {
 
 
 #Preview {
-    HowToPlayScreen().environmentObject(GameStore()).preferredColorScheme(.dark)
+    let motionManager = MotionManager()
+    let store = GameStore(
+        motionManager: motionManager
+    )
+    HowToPlayScreen()
+    .environmentObject(store)
+    .environmentObject(motionManager)
 }

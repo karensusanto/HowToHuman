@@ -240,6 +240,11 @@ struct HumanInstructionScreen: View {
 }
 
 #Preview {
+    let motionManager = MotionManager()
+    let store = GameStore(
+        motionManager: motionManager
+    )
     HumanInstructionScreen()
-        .environmentObject(GameStore()) .environmentObject(MotionManager())
+    .environmentObject(store)
+    .environmentObject(motionManager)
 }

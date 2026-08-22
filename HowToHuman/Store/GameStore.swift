@@ -91,7 +91,7 @@ enum GamePhase: Codable {
 @MainActor
 final class GameStore: ObservableObject {
     let networkManager: NetworkManager
-    @EnvironmentObject var motionManager: MotionManager
+    let motionManager: MotionManager
     
     @Published var state: AppState = .home
     @Published var phase: GamePhase = .none
@@ -119,8 +119,9 @@ final class GameStore: ObservableObject {
     
     private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
     
-    init() {
-        networkManager = NetworkManager()
+    init(motionManager: MotionManager) {
+        self.networkManager = NetworkManager()
+        self.motionManager = motionManager
         
         myGameData = PlayerGameData(
             id: networkManager.myPeerId,
@@ -537,6 +538,8 @@ final class GameStore: ObservableObject {
         
         if connectionToHost == nil{
             leaveRoomAsHost(){ [weak self] in
+                self?.clearGame()
+                self?.state = .home
                 self?.endBackgroundTask()
             }
         }
@@ -547,6 +550,8 @@ final class GameStore: ObservableObject {
             }
             
             leaveRoomAsParticipant(on: connection){ [weak self] in
+                self?.clearGame()
+                self?.state = .home
                 self?.endBackgroundTask()
             }
         }

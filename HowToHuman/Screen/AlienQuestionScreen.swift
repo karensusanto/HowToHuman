@@ -204,6 +204,11 @@ struct Triangle: Shape {
 }
 
 #Preview {
-    AlienQuestionScreen().environmentObject(GameStore())
-        .environmentObject(MotionManager())
+    let motionManager = MotionManager()
+    let store = GameStore(
+        motionManager: motionManager
+    )
+    AlienQuestionScreen()
+    .environmentObject(store)
+    .environmentObject(motionManager)
 }

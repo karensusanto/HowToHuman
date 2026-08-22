@@ -160,7 +160,11 @@ struct StoryCardView: View {
 }
 
 #Preview {
-    // Injecting an empty GameStore to ensure the Canvas preview does not crash
+    let motionManager = MotionManager()
+    let store = GameStore(
+        motionManager: motionManager
+    )
     DisplayScreen()
-        .environmentObject(GameStore())
+    .environmentObject(store)
+    .environmentObject(motionManager)
 }

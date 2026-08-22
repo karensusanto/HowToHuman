@@ -143,5 +143,11 @@ struct LobbySearchScreen: View {
 }
 
 #Preview {
-    LobbySearchScreen().environmentObject(GameStore()).environmentObject(MotionManager())
+    let motionManager = MotionManager()
+    let store = GameStore(
+        motionManager: motionManager
+    )
+    LobbySearchScreen()
+    .environmentObject(store)
+    .environmentObject(motionManager)
 }

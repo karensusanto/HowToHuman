@@ -10,14 +10,28 @@ import SwiftUI
 @main
 struct HowToHumanApp: App {
     
-    @StateObject private var store = GameStore()
-    @StateObject private var motion: MotionManager = MotionManager()
     @Environment(\.scenePhase) private var scenePhase
+    @StateObject private var motionManager: MotionManager
+        @StateObject private var store: GameStore
+
+        init() {
+            let motionManager = MotionManager()
+
+            _motionManager = StateObject(
+                wrappedValue: motionManager
+            )
+
+            _store = StateObject(
+                wrappedValue: GameStore(
+                    motionManager: motionManager
+                )
+            )
+        }
 
     var body: some Scene {
         WindowGroup {
             RootView()
-                .environmentObject(store).environmentObject(motion)
+                .environmentObject(store).environmentObject(motionManager)
                 .onChange(of: scenePhase) { oldPhase, newPhase in
                     if newPhase == .inactive {
                         if store.currRoom != nil {
