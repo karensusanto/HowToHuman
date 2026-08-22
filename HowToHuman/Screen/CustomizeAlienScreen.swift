@@ -171,5 +171,11 @@ struct CustomizeAlienScreen: View {
 }
 
 #Preview {
-    CustomizeAlienScreen().environmentObject(GameStore()).environmentObject(MotionManager())
+    let motionManager = MotionManager()
+    let store = GameStore(
+        motionManager: motionManager
+    )
+    CustomizeAlienScreen()
+    .environmentObject(store)
+    .environmentObject(motionManager)
 }

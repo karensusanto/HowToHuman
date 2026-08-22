@@ -246,7 +246,11 @@ struct AlienNarrationScreen: View {
 }
 
 #Preview {
+    let motionManager = MotionManager()
+    let store = GameStore(
+        motionManager: motionManager
+    )
     AlienNarrationScreen()
-    .environmentObject(GameStore())
-    .environmentObject(MotionManager())
+    .environmentObject(store)
+    .environmentObject(motionManager)
 }

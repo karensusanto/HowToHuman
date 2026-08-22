@@ -49,5 +49,11 @@ struct RootView: View {
 }
 
 #Preview {
-    RootView().environmentObject(GameStore()).environmentObject(MotionManager())
+    let motionManager = MotionManager()
+    let store = GameStore(
+        motionManager: motionManager
+    )
+    RootView()
+    .environmentObject(store)
+    .environmentObject(motionManager)
 }

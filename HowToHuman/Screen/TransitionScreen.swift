@@ -177,5 +177,11 @@ struct TransitionScreen: View {
 }
 
 #Preview {
-    TransitionScreen().environmentObject(GameStore()).preferredColorScheme(.dark)
+    let motionManager = MotionManager()
+    let store = GameStore(
+        motionManager: motionManager
+    )
+    TransitionScreen()
+    .environmentObject(store)
+    .environmentObject(motionManager)
 }
