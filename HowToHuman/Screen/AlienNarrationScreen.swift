@@ -168,7 +168,7 @@ struct AlienNarrationScreen: View {
     private func navArrowButton(systemName: String, isEnabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 20, weight: .bold))
+                .font(.system(size: 20, weight: .semibold, design: .rounded))
                 .foregroundColor(purpleGlow)
                 .frame(width: 28, height: 28)
         }
