@@ -13,7 +13,8 @@ struct AlienQuestionScreen: View {
     
     @State private var answerText: String = ""
     @FocusState private var isAnswerFocused: Bool
-    @State private var timeRemaining: Int = 30
+    @State private var timeRemaining: Int = 0
+    @State private var readyMsgSubmitted: Bool = false
     
     private let maxCharacters = 30
     
@@ -40,99 +41,117 @@ struct AlienQuestionScreen: View {
         ZStack{
             Color.clear.ignoresSafeArea()
             
-            VStack{
+            VStack(spacing: 20){
                 
-                    HStack {
-                        Color.clear.frame(width: 40, height: 40)
-                        Spacer()
-                        HTHText(title: "Ask a Human", size: HTHSize.largeTitle, color: HTHColor.yellow)
-                        Spacer()
-                        timerBadge
-                    }
-                    .padding(.horizontal, 20)
+                HStack {
+                    ExitRoomButton()
+                    Color.clear.frame(width: 40, height: 40)
+                    Spacer()
+                    HTHText(title: "Ask a Human", size: HTHSize.largeTitle, color: HTHColor.yellow)
+                    Spacer()
+                    timerBadge
+                }
                 
-                    ZStack(alignment: .top) {
-                        Image("spaceship-purple")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 190, height: 120)
-                            .padding(.top, 44)
-
-                            SpeechBubbleDots()
-                    }
-
-                                  
-                    HStack {
-                        Spacer()
-                        Text("\(answerText.count)/\(maxCharacters)")
-                            .font(.footnote)
-                            .foregroundColor(.white.opacity(0.6))
-                    }
+                ZStack(alignment: .top) {
+                    Image(store.myPlayerData.avatar)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 190, height: 120)
+                        .padding(.top, 44)
                     
-                    VStack {
-                        Text("How do you ")
-                            .foregroundColor(.white)
-                        +
-                        Text(placeholderText)
-                            .foregroundColor(.white)
-                        +
-                        Text(" ?")
-                            .foregroundColor(.white)
-                    }
-                    .font(.system(size: 17, weight: .medium))
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
-                    .overlay(
-                        
+                    SpeechBubbleDots()
+                }
+                
+                
+                HStack {
+                    Spacer()
+                    Text("\(answerText.count)/\(maxCharacters)")
+                        .font(.footnote)
+                        .foregroundColor(.white.opacity(0.6))
+                }
+                
+                VStack {
+                    HTHText(title: "How do you", font: HTHFont.space_grot)
+                        .foregroundColor(.white)
+                    
+                    Text("\(placeholderText)?")
+                        .foregroundColor(.white)
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .multilineTextAlignment(.center)
+                .textInputAutocapitalization(.never)
+                .overlay(
                     TextField("", text: $answerText)
+                        .font(.custom(HTHFont.space_grot, size: HTHSize.body))
                         .focused($isAnswerFocused)
-                        .opacity(0.02))
-                        .onChange(of: answerText) { newValue in
-                            if newValue.count > maxCharacters {
-                                answerText = String(newValue.prefix(maxCharacters))
-                            }
-                        }
-                        .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(Color.black))
-                            .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(HTHColor.purple, lineWidth: 2))
-                            .shadow(color: HTHColor.purple.opacity(0.6), radius: 6)
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                            isAnswerFocused = true
-                            }
-                            .padding(.horizontal)
-                            .padding(.bottom)
-                    
-                    Text("Keep it simple, ask about things they'd probably do everyday.")
-                            .font(.footnote)
-                            .foregroundColor(.white)
-                            .multilineTextAlignment(.center)
+                        .opacity(0.02)
+                )
+                .onChange(of: answerText) {
+                    if answerText.count > maxCharacters {
+                        answerText = String(answerText.prefix(maxCharacters))
+                    }
+                }
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.black))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(HTHColor.purple, lineWidth: 2))
+                .shadow(color: HTHColor.purple.opacity(0.6), radius: 6)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    isAnswerFocused = true
+                    if readyMsgSubmitted{
+                        store.sendReadyStatus(false)
+                        readyMsgSubmitted = false
+                    }
+                }
+                
+                HTHText(title: "Keep it simple, ask about things they'd probably do everyday.", size: HTHSize.caption, font: HTHFont.space_grot)
 
                     Spacer()
                 
-                PrimaryButton(title: "Ready", btnHeight: 56){
-                    store.joiningRoom = nil
-                    store.state = .customizeAlien
+                if readyMsgSubmitted{
+                    HTHText(title: "Waiting for other players...", size: HTHSize.caption, font: HTHFont.space_grot)
                 }
-                .disabled(!isReady)
-                .grayscale(isReady ? 0 : 1)
-                .opacity(isReady ? 1.0 : 0.6)
-                .animation(.easeInOut(duration: 0.2), value: isReady)
-                .padding()
+                PrimaryButton(title: "Ready", isDisabled: !isReady || readyMsgSubmitted){
+                    store.sendReadyStatus(true)
+                    readyMsgSubmitted = true
+                }
             }
+            .padding()
+            
+            VStack{
+                if store.showExitRoomPopUp{
+                    ExitRoomPopUp(isPresented: $store.showExitRoomPopUp)
+                }
+            }.padding()
         }
         .frame(maxWidth: .infinity)
         .background {
             HTHGameBackground()
         }
+        .onAppear{
+            store.submittedQuestions = 0
+            timeRemaining = (store.currRoom?.timerMode.seconds(for: .question)) ?? 0
+        }
+        .onDisappear{
+            if answerText != "" {
+                store.myGameData.question = answerText
+            }
+            store.submitGameData(data: store.myGameData)
+        }
         .onReceive(timer) { _ in
-            guard timeRemaining > 0 else { return }
+            guard timeRemaining > 0 else {
+                if store.currRoom?.hostID == store.myPlayerData.id {
+                    return store.next()
+                }
+                else{
+                    store.state = store.state.next
+                }
+                return
+            }
             timeRemaining -= 1
         }
     }

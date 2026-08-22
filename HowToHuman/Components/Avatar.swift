@@ -92,7 +92,7 @@ struct AvatarLobbyView: View {
             
             
         }
-        .offset(y: floating ? 3.0 : 3.0)
+        .offset(y: floating ? 3.0 : -3.0)
         .onAppear {
             withAnimation(.easeInOut(duration: Double.random(in: 1.8...2.6)).repeatForever(autoreverses: true)) {
                 floating = true

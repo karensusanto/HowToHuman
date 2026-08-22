@@ -10,11 +10,10 @@ import Combine
 
 struct HumanInstructionScreen: View {
 
-    let question: String
     @EnvironmentObject var store: GameStore
 
-    @State private var steps: [String] = [""]
-    @State private var timeRemaining: Int = 60
+    @State private var steps: [String] = []
+    @State private var timeRemaining: Int = 0
 
     private let maxSteps = 5
     private let yellowAccent = Color(red: 0.94, green: 0.76, blue: 0.29)
@@ -33,30 +32,29 @@ struct HumanInstructionScreen: View {
     private var canAddStep: Bool {
         steps.count < maxSteps
     }
+    
+    @State private var readyMsgSubmitted: Bool = false
 
-    init(question: String = "How do you shower?") {
-        self.question = question
-    }
+    @State private var assignmentList: [UUID: UUID] = [:]
+    @State private var listHeight: CGFloat = 0
 
+    
     var body: some View {
         ZStack {
             VStack {
 
                 HStack {
-                    Color.clear.frame(width: 40, height: 40)
+                    ExitRoomButton()
                     Spacer()
                     HTHText(title: "Guide The Alien", size: HTHSize.largeTitle, color: HTHColor.yellow)
                     Spacer()
                     timerBadge
                 }
-                .padding(.horizontal, 20)
 
                 questionPill
-                    .padding(.horizontal, 40)
-                    .padding(.top, 16)
                 
                 //Baeni need Human Image TT.TT
-                Image("spaceship-blue")
+                Image("human")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 130)
@@ -64,38 +62,86 @@ struct HumanInstructionScreen: View {
 
                 VStack(alignment: .trailing, spacing: 8) {
                     stepCounter
-
                     VStack(spacing: 12) {
                         ForEach(steps.indices, id: \.self) { index in
-                            stepField(index: index)
+                            HStack{
+                                stepField(index: index)
+                                Button{
+                                    deleteStep(index)
+                                }label:{
+                                    Image(systemName: "trash")
+                                        .foregroundStyle(.white)
+                                }
+                            }
                         }
+                        .listRowBackground(Color.clear)
+                        .onTapGesture {
+                            if readyMsgSubmitted{
+                                store.sendReadyStatus(false)
+                                readyMsgSubmitted = false
+                            }
+                        }
+                        
                         if canAddStep {
                             addStepButton
+                                .onTapGesture {
+                                    if readyMsgSubmitted{
+                                        store.sendReadyStatus(false)
+                                        readyMsgSubmitted = false
+                                    }
+                                }
+                                .listRowBackground(Color.clear)
                         }
+                            
                     }
+                    
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
 
                 Spacer()
-
-                PrimaryButton(title: "Ready", btnHeight: 56) {
-                    store.joiningRoom = nil
-                    store.state = .customizeAlien
+                if readyMsgSubmitted{
+                    HTHText(title: "Waiting for other players...", size: HTHSize.caption, font: HTHFont.space_grot)
                 }
-                .disabled(!isReady)
-                .grayscale(isReady ? 0 : 1)
-                .opacity(isReady ? 1.0 : 0.6)
-                .animation(.easeInOut(duration: 0.2), value: isReady)
-                .padding()
+                PrimaryButton(title: "Ready", isDisabled: !isReady || readyMsgSubmitted) {
+                    store.sendReadyStatus(true)
+                    readyMsgSubmitted = true
+                }
             }
+            .padding()
+            
+            VStack{
+                if store.showExitRoomPopUp{
+                    ExitRoomPopUp(isPresented: $store.showExitRoomPopUp)
+                }
+            }.padding()
         }
         .frame(maxWidth: .infinity)
         .background {
             HTHGameBackground()
         }
+        .onAppear{
+            timeRemaining = (store.currRoom?.timerMode.seconds(for: .steps)) ?? 0
+        }
+        .onDisappear{
+            let validSteps = steps.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty}
+            
+            if var receivedGameData = store.receivedGameData{
+                if validSteps.count > 0{
+                    receivedGameData.answer = validSteps
+                }
+                
+                store.submitGameData(data: receivedGameData)
+            }
+        }
         .onReceive(timer) { _ in
-            guard timeRemaining > 0 else { return }
+            guard timeRemaining > 0 else {
+                if store.currRoom?.hostID == store.myPlayerData.id {
+                    return store.next()
+                }
+                else{
+                    store.state = store.state.next
+                }
+                return
+            }
             timeRemaining -= 1
         }
     }
@@ -112,22 +158,19 @@ struct HumanInstructionScreen: View {
     }
 
     private var questionPill: some View {
-        Text(question)
-            .font(.system(size: 18, weight: .heavy, design: .rounded))
-            .foregroundColor(.white)
+        HTHText(title: store.receivedGameData?.question ?? "No question", font: HTHFont.space_grot, weight: .medium)
             .multilineTextAlignment(.center)
             .minimumScaleFactor(0.7)
             .lineLimit(3)
-            .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 20)
             .padding(.vertical, 14)
             .frame(maxWidth: .infinity)
             .background(
-                RoundedRectangle(cornerRadius: 28)
+                RoundedRectangle(cornerRadius: 12)
                     .fill(Color.black)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 28)
+                RoundedRectangle(cornerRadius: 12)
                     .stroke(purpleGlow, lineWidth: 1.5)
                     .shadow(color: purpleGlow.opacity(0.6), radius: 6)
             )
@@ -135,7 +178,7 @@ struct HumanInstructionScreen: View {
 
 
     private var stepCounter: some View {
-        Text("\(filledStepsCount)/\(maxSteps)")
+        Text("\(steps.count)/\(maxSteps)")
             .font(.system(size: 13, weight: .semibold, design: .rounded))
             .foregroundColor(.white.opacity(0.7))
             .animation(.easeInOut(duration: 0.2), value: filledStepsCount)
@@ -143,15 +186,23 @@ struct HumanInstructionScreen: View {
 
     private func stepField(index: Int) -> some View {
         HStack(spacing: 12) {
-            Text("\(index + 1)")
-                .font(.system(size: 15, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
+            HTHText(title: "\(index + 1)", font: HTHFont.space_grot, weight: .medium)
                 .frame(width: 30, height: 30)
                 .background(Circle().fill(Color.black))
 
-            TextField("Write the instructions here..", text: $steps[index], axis: .vertical)
-                .font(.system(size: 16))
-                .lineLimit(1...4)
+            ZStack(alignment: .topLeading) {
+                if steps[index] == "" {
+                    HTHText(title: "Write the instructions here...", font: HTHFont.space_grot, color: .black.opacity(0.5))
+                }
+
+                TextField("", text: $steps[index], axis: .vertical)
+                    .font(.custom(HTHFont.space_grot, size: 16))
+                    .foregroundStyle(.black)
+                    .lineLimit(1...4)
+            }
+                
+            
+            
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -161,6 +212,10 @@ struct HumanInstructionScreen: View {
                 .fill(Color.white)
         )
     }
+    
+    private func deleteStep(_ index: Int){
+        steps.remove(at: index)
+    }
 
     private var addStepButton: some View {
         Button {
@@ -169,7 +224,7 @@ struct HumanInstructionScreen: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "plus.circle.fill")
-                Text("add more steps..")
+                Text("add step")
             }
             .font(.system(size: 15, weight: .semibold, design: .rounded))
             .foregroundColor(.white.opacity(0.7))

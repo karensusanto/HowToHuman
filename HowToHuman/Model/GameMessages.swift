@@ -28,6 +28,7 @@ enum MessageType: Codable{
     case sharedGameData
     case leaveNotice
     case reaction
+    case readiness
 }
 
 struct MessageEnvelope: Codable{
@@ -38,7 +39,7 @@ struct MessageEnvelope: Codable{
 struct PlayerGameData: Codable, Sendable{
     let id: UUID
     var question: String?
-    var answer: String?
+    var answer: [String]?
     var experience: String?
     var vote: Float?
 }

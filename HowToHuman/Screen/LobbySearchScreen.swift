@@ -10,85 +10,85 @@ import SwiftUI
 struct OrbitView: View {
     @EnvironmentObject var store: GameStore
     @Binding var joinRoomPopUp: Bool
-
+    
     var body: some View {
-            GeometryReader { geo in
-                let diameter = geo.size.height * 0.8
-                let padding = CGFloat(50)
+        GeometryReader { geo in
+            let diameter = geo.size.height * 0.8
+            let padding = CGFloat(50)
+            
+            ZStack {
+                // Your orbit/dashed-line image
+                Image("earth-perimeter")
+                    .resizable()
+                    .frame(
+                        width: diameter,
+                        height: diameter
+                    )
                 
-                ZStack {
-                    // Your orbit/dashed-line image
-                    Image("earth-perimeter")
-                        .resizable()
-                        .frame(
-                            width: diameter,
-                            height: diameter
-                        )
-                    
-                    // Earth
-                    Image("earth")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 300)
-                    
-                    // Ships
-                    if !store.availableRooms.isEmpty {
-                        ForEach(
-                            Array(store.availableRooms.enumerated()),
-                            id: \.element.id
-                        ) { index, room in
-                            
-                            let count = store.availableRooms.count
-                            
-                            // -90° -> +90°
-                            let progress = count == 1
-                            ? 0.5
-                            : Double(index) / Double(count - 1)
-                            
-                            let angle =
-                            -.pi / 2 + progress * .pi
-                            
-                            let radiusX = diameter / 2 - padding
-                            let radiusY = diameter / 2
-                            
-                            let x =
-                            radiusX * cos(angle)
-                            
-                            let y =
-                            radiusY * sin(angle)
-                            
-                            Button {
-                                store.joiningRoom = room
-                                joinRoomPopUp = true
-                            } label: {
-                                VStack(spacing: 4) {
-                                    Image(room.hostAvatar)
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 100)
-                                    
-                                    HTHText(
-                                        title: room.roomName, size: HTHSize.caption, font: HTHFont.space_grot, weight: .medium
-                                    ).frame(width: 100).multilineTextAlignment(.center)
-                                    HTHText(
-                                        title: "(\(room.playerCount) / \(room.maxPlayers) Players)", size: HTHSize.caption, font: HTHFont.space_grot, weight: .medium
-                                    ).frame(width: 100).multilineTextAlignment(.center)
-                                }
+                // Earth
+                Image("earth")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 300)
+                
+                // Ships
+                if !store.availableRooms.isEmpty {
+                    ForEach(
+                        Array(store.availableRooms.enumerated()),
+                        id: \.element.id
+                    ) { index, room in
+                        
+                        let count = store.availableRooms.count
+                        
+                        // -90° -> +90°
+                        let progress = count == 1
+                        ? 0.5
+                        : Double(index) / Double(count - 1)
+                        
+                        let angle =
+                        -.pi / 2 + progress * .pi
+                        
+                        let radiusX = diameter / 2 - padding
+                        let radiusY = diameter / 2
+                        
+                        let x =
+                        radiusX * cos(angle)
+                        
+                        let y =
+                        radiusY * sin(angle)
+                        
+                        Button {
+                            store.joiningRoom = room
+                            joinRoomPopUp = true
+                        } label: {
+                            VStack(spacing: 4) {
+                                Image(room.hostAvatar)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 100)
+                                
+                                HTHText(
+                                    title: room.roomName, size: HTHSize.caption, font: HTHFont.space_grot, weight: .medium
+                                ).frame(width: 100).multilineTextAlignment(.center)
+                                HTHText(
+                                    title: "(\(room.playerCount) / \(room.maxPlayers) Players)", size: HTHSize.caption, font: HTHFont.space_grot, weight: .medium
+                                ).frame(width: 100).multilineTextAlignment(.center)
                             }
-                            .position(
-                                x: diameter / 2 + x + padding,
-                                y: geo.size.height / 2 + y
-                            )
                         }
+                        .position(
+                            x: diameter / 2 + x + padding,
+                            y: geo.size.height / 2 + y
+                        )
                     }
                 }
-                .frame(
-                    width: diameter
-                )
-                .offset(
-                    x: -diameter / 2
-                )
             }
+            .frame(
+                width: diameter, height: geo.size.height
+            )
+            .offset(
+                x: -diameter / 2
+            )
+        }
     }
 }
 
@@ -106,26 +106,23 @@ struct LobbySearchScreen: View {
                 HStack{
                     BackButton(toState: .home)
                     Spacer()
-//                    HTHText(title: "JOIN A ROOM", size: HTHSize.title, color: HTHColor.yellow)
-//                    Spacer()
-//                    Color.clear.frame(width: 40, height: 40)
                 }
                 
                 OrbitView(joinRoomPopUp: $joinRoomPopUp)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(maxHeight: .infinity)
+                    .frame(maxWidth: .infinity)
+                    .frame(maxHeight: .infinity)
                 
                 PrimaryButton(title: "CREATE ROOM", btnHeight: 72){
                     store.joiningRoom = nil
                     store.state = .customizeAlien
                 }
             }.padding()
-            .onAppear {
-                store.startBrowsing()
-            }
-            .onDisappear {
-                store.networkManager.stopBrowsing()
-            }
+                .onAppear {
+                    store.startBrowsing()
+                }
+                .onDisappear {
+                    store.networkManager.stopBrowsing()
+                }
             
             VStack{
                 

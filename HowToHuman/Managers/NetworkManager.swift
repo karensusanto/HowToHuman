@@ -23,9 +23,10 @@ class NetworkManager: ObservableObject{
     
     var onJoinResponse: ((JoinResponse, NWConnection) -> Void)?
     var onReceiveSharedData: ((SharedGameData, NWConnection) -> Void)?
-    var onLeaveRequest: ((LeavingPlayer, NWConnection) -> Void)?
+    var onLeaveRequest: ((Player, NWConnection) -> Void)?
     var onReceivePlayerGameData: ((PlayerGameData, NWConnection) -> Void)?
     var onReceiveReaction: ((Bubble, NWConnection) -> Void)?
+    var onReceiveReady: ((String) -> Void)?
     
     func startAdvertising(room : Room) {
         do {
@@ -156,7 +157,7 @@ class NetworkManager: ObservableObject{
                     case .leaveNotice:
                         print("Received player leave notice")
                         let player = try JSONDecoder().decode(
-                            LeavingPlayer.self,
+                            Player.self,
                             from: envelope.data
                         )
                         
@@ -189,6 +190,11 @@ class NetworkManager: ObservableObject{
                         )
                         
                         self.onReceiveReaction?(bubble, connection)
+                    case .readiness:
+                        print("Received readiness status")
+                        let readiness = String(data: envelope.data, encoding: .utf8)!
+                        
+                        self.onReceiveReady?(readiness)
                     }
                     
                     
@@ -213,6 +219,8 @@ class NetworkManager: ObservableObject{
                         print("Listening for data...")
                     case .reaction:
                         print("Failed to decode reaction.")
+                    case .readiness:
+                        print("Failed to decode ready status.")
                     }
                     
                 }

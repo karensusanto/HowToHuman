@@ -75,31 +75,38 @@ struct CustomizeAlienScreen: View {
                     alienScrollView
                     HStack{
                         Spacer()
-                        Button{
-                            guard let selectedAvatar,
-                                  let index = AlienAvatar.allCases.firstIndex(of: selectedAvatar),
-                                  index > 0
-                            else { return }
-                            
-                            withAnimation {
-                                self.selectedAvatar = AlienAvatar.allCases[index - 1]
+                        if selectedAvatar != AlienAvatar.allCases.first{
+                            Button{
+                                guard let selectedAvatar,
+                                      let index = AlienAvatar.allCases.firstIndex(of: selectedAvatar),
+                                      index > 0
+                                else { return }
+                                
+                                withAnimation {
+                                    self.selectedAvatar = AlienAvatar.allCases[index - 1]
+                                }
+                            }label:{
+                                Image(systemName: "chevron.left").fontWeight(.bold).foregroundStyle(.white)
                             }
-                        }label:{
-                            Image(systemName: "chevron.left").fontWeight(.bold).foregroundStyle(.white)
                         }
+                        
                         Color.clear.frame(width: 230, height: 300)
-                        Button{
-                            guard let selectedAvatar,
-                                  let index = AlienAvatar.allCases.firstIndex(of: selectedAvatar),
-                                  index < AlienAvatar.allCases.count - 1
-                            else { return }
-                            
-                            withAnimation {
-                                self.selectedAvatar = AlienAvatar.allCases[index + 1]
+                        
+                        if selectedAvatar != AlienAvatar.allCases.last{
+                            Button{
+                                guard let selectedAvatar,
+                                      let index = AlienAvatar.allCases.firstIndex(of: selectedAvatar),
+                                      index < AlienAvatar.allCases.count - 1
+                                else { return }
+                                
+                                withAnimation {
+                                    self.selectedAvatar = AlienAvatar.allCases[index + 1]
+                                }
+                            }label:{
+                                Image(systemName: "chevron.right").fontWeight(.bold).foregroundStyle(.white)
                             }
-                        }label:{
-                            Image(systemName: "chevron.right").fontWeight(.bold).foregroundStyle(.white)
                         }
+                        
                         Spacer()
                     }
                 }
@@ -139,14 +146,16 @@ struct CustomizeAlienScreen: View {
                     if store.joiningRoom == nil {
                         let host = Player(id: store.networkManager.myPeerId, name: playerName, avatar: selectedAvatar!)
                         let room = Room(name: "\(host.name)'s Satellite", hostID: host.id, players: [host])
+                        store.playerGameDataList.append(store.myGameData)
                         
                         store.networkManager.startAdvertising(room: room)
                         store.currRoom = room
                         store.state = .lobby
                     }
                     else{//joining room
-                        let player = Player(id: store.networkManager.myPeerId, name: playerName, avatar: selectedAvatar!)
-                        store.networkManager.join(room: store.joiningRoom!, player: player)
+                        store.myPlayerData.name = playerName
+                        store.myPlayerData.avatar = selectedAvatar!
+                        store.join()
                     }
                     
                     
@@ -162,5 +171,5 @@ struct CustomizeAlienScreen: View {
 }
 
 #Preview {
-    CustomizeAlienScreen().environmentObject(GameStore()).preferredColorScheme(.dark)
+    CustomizeAlienScreen().environmentObject(GameStore()).environmentObject(MotionManager())
 }

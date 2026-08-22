@@ -9,6 +9,7 @@ import SwiftUI
 
 struct HomeScreen: View {
     @EnvironmentObject var store: GameStore
+    @State private var floating: Bool = false
     
     var body: some View {
         ZStack{
@@ -16,13 +17,18 @@ struct HomeScreen: View {
             VStack(spacing: 100) {
                 
                 ZStack{
-                    Image("HTHTitleText").resizable().scaledToFit()
                     HStack{
                         Spacer()
-                        Image("spaceship-pink").resizable().scaledToFit()
-                            .frame(width: 115)
-                            .rotationEffect(.degrees(24))
-                    }.offset(x: 25, y: -110)
+                        Image("HTHTitleAlien").resizable().scaledToFit()
+                            .frame(width: 203)
+                    }.offset(x: 35, y: floating ? -50 : -30)
+                    .onAppear {
+                        withAnimation(.easeInOut(duration: Double.random(in: 1.8...2.6)).repeatForever(autoreverses: true)) {
+                            floating = true
+                        }
+                    }
+                    Image("HTHTitleText").resizable().scaledToFit()
+                    
                 }
                 
                 VStack(spacing: 20){
@@ -51,5 +57,5 @@ struct HomeScreen: View {
 }
 
 #Preview {
-    HomeScreen().environmentObject(GameStore()).preferredColorScheme(.dark)
+    HomeScreen().environmentObject(GameStore()).environmentObject(MotionManager())
 }

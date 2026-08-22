@@ -50,7 +50,7 @@ struct TransitionScreen: View {
                             ],
 
 
-        .reviewExperience: [("**Welcome back to the spaceship, aliens.**", HTHSize.body, HTHFont.slackey),
+        .shareExperience: [("**Welcome back to the spaceship, aliens.**", HTHSize.body, HTHFont.slackey),
                             ("\n\n", HTHSize.body, HTHFont.slackey),
                             ("Time to share our experience", HTHSize.body, HTHFont.slackey),
                             ("\n\n", HTHSize.body, HTHFont.slackey),
@@ -69,6 +69,7 @@ struct TransitionScreen: View {
     
     @State private var visibleRows: [Bool] = [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false]
     @State private var animationWorkItems: [DispatchWorkItem] = []
+//    @State private var assignmentList: [UUID: UUID] = [:]
     var body: some View {
         ZStack{
             Color.clear.ignoresSafeArea()
@@ -105,38 +106,43 @@ struct TransitionScreen: View {
                 }.padding(.horizontal, 40)
                 Spacer()
                 
-                if store.currRoom?.hostID == store.networkManager.myPeerId {
+                if store.currRoom?.hostID == store.myPlayerData.id {
                     PrimaryButton(title: "CONTINUE"){
-                        switch store.phase {
-                        case .askHuman:
-                            store.state = .askHuman
-                        case .answerAlien:
-                            store.state = .answerAlien
-                        case .narrateExperience:
-                            store.state = .narrateExperience
-                        case .reviewExperience:
-                            store.state = .reviewExperience
-                        case .voting:
-                            store.state = .voting
-                        case .none:
-                            store.state = .lobby
-                        }
-                        
-                        store.sendDataToPlayers()
+                        store.next()
                     }
+                }else{
+                    HTHText(title: "Wait for host to continue", font: HTHFont.space_grot)
                 }
                 
             }.padding()
-                .onAppear{
-                    startSequencedAnimation()
-                }
-                .onTapGesture {
-                    skipAnimation()
-                }
-            
-            if store.showExitRoomPopUp == true{
-                ExitRoomPopUp(isPresented: $store.showExitRoomPopUp)
+            .onAppear{
+//                print(store.phase)
+//                print("Submitted game data: ", store.submittedGameData)
+//                print("Player count: ", store.currRoom?.players.count ?? 0)
+//                print("Host id: ", store.currRoom?.hostID ?? "")
+//                print("Player id: ", store.myPlayerData.id)
+//                if (store.phase == .answerAlien && store.currRoom?.hostID == store.myPlayerData.id && store.submittedGameData == store.currRoom?.players.count){
+//                    assignmentList = store.assignQuestions()
+//                    print(assignmentList)
+//                }
+                startSequencedAnimation()
             }
+//            .onChange(of: store.submittedGameData){
+//                print("Submitted game data: ", store.submittedGameData)
+//                if store.phase == .answerAlien && store.currRoom?.hostID == store.myPlayerData.id && store.submittedGameData == store.currRoom?.players.count && assignmentList.isEmpty{
+//                    assignmentList = store.assignQuestions()
+//                    print(assignmentList)
+//                }
+//            }
+            .onTapGesture {
+                skipAnimation()
+            }
+            
+            VStack{
+                if store.showExitRoomPopUp == true{
+                    ExitRoomPopUp(isPresented: $store.showExitRoomPopUp)
+                }
+            }.padding()
         }
         .frame(maxWidth: .infinity)
         .background {
