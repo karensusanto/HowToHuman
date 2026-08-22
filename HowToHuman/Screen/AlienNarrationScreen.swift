@@ -25,6 +25,8 @@ struct AlienNarrationScreen: View {
     private var isReady: Bool {
         !narrations.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
+    
+    @State private var narrationsLen : Int = 0
 
     var body: some View {
         ZStack {
@@ -35,6 +37,7 @@ struct AlienNarrationScreen: View {
                     ExitRoomButton()
                     Spacer()
                     HTHText(title: "Tell Your Experience", size: HTHSize.title, color: HTHColor.yellow)
+                        .multilineTextAlignment(.center)
                     Spacer()
                     timerBadge
                 }
@@ -43,13 +46,17 @@ struct AlienNarrationScreen: View {
 
                 stepCarousel
 
-                narrationField
-                    .onTapGesture {
-                        if readyMsgSubmitted{
-                            store.sendReadyStatus(false)
-                            readyMsgSubmitted = false
+                VStack{
+                    narrationField
+                        .onTapGesture {
+                            if readyMsgSubmitted{
+                                store.sendReadyStatus(false)
+                                readyMsgSubmitted = false
+                            }
                         }
-                    }
+                    
+                    HTHText(title: "\(narrationsLen)/200", size: HTHSize.caption, color: Color.gray)
+                }
 
                 Spacer()
                 if readyMsgSubmitted{
@@ -213,10 +220,15 @@ struct AlienNarrationScreen: View {
             TextField("", text: $narrations, axis: .vertical)
             .foregroundStyle(.white)
             .font(.custom(HTHFont.space_grot, size: 16))
-                .foregroundColor(.white)
-                .lineLimit(3...6)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
+            .lineLimit(3...6)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .onChange(of: narrations) { _, newValue in
+                if newValue.count > 200 {
+                    narrations = String(newValue.prefix(200))
+                }
+                narrationsLen = narrations.count
+            }
         }
         .frame(minHeight: 90, alignment: .topLeading)
         .frame(maxWidth: .infinity)
