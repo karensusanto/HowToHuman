@@ -15,7 +15,7 @@ struct BackButton: View {
         Button{ store.state = toState }label:{
             Image(systemName: "chevron.left")
                 .foregroundStyle(Color.white).bold()
-                .font(.system(size: HTHSize.title))
+                .font(.system(size: HTHSize.smallerTitle))
                 .padding()
         }
         .clipShape(Circle())
@@ -33,7 +33,7 @@ struct ExitRoomButton: View {
             Image(systemName: "rectangle.portrait.and.arrow.right")
                 .scaleEffect(x: -1, y: 1)
                 .foregroundStyle(Color.white).bold()
-                .font(.system(size: HTHSize.title))
+                .font(.system(size: HTHSize.smallerTitle))
                 .padding()
         }
         .clipShape(Circle())
