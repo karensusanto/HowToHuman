@@ -290,6 +290,7 @@ final class GameStore: ObservableObject {
         
         print("Start listening to newly connected player")
         startOrStopListeningToOne(on: connection, stop: false)
+        networkManager.updateRoomAdvertisement(room: currRoom!)
         // send game data
         shareGameData()
     }

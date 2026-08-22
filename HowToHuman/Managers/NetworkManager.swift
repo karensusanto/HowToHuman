@@ -97,6 +97,25 @@ class NetworkManager: ObservableObject{
         
     }
     
+    func updateRoomAdvertisement(room: Room) {
+        
+        let metadata = [
+            "roomID": room.id.uuidString,
+            "hostID": room.hostID.uuidString,
+            "hostAvatar": room.players.first!.avatar,
+            "playerCount": "\(room.players.count)",
+            "maxPlayers": "\(room.maxPlayers)"
+        ]
+        
+        let txtRecord = NWTXTRecord(metadata)
+        
+        listener?.service = NWListener.Service(
+            name: room.roomName,
+            type: self.serviceType,
+            txtRecord: txtRecord
+        )
+    }
+    
     func receive(on connection: NWConnection) {
         var type : MessageType = .none
         connection.receive(
