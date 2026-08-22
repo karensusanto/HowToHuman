@@ -36,6 +36,8 @@ struct HumanInstructionScreen: View {
     @State private var readyMsgSubmitted: Bool = false
 
     @State private var assignmentList: [UUID: UUID] = [:]
+    @State private var listHeight: CGFloat = 0
+
     
     var body: some View {
         ZStack {
@@ -60,18 +62,26 @@ struct HumanInstructionScreen: View {
 
                 VStack(alignment: .trailing, spacing: 8) {
                     stepCounter
-
                     VStack(spacing: 12) {
                         ForEach(steps.indices, id: \.self) { index in
-                            stepField(index: index)
-                                
+                            HStack{
+                                stepField(index: index)
+                                Button{
+                                    deleteStep(index)
+                                }label:{
+                                    Image(systemName: "trash")
+                                        .foregroundStyle(.white)
+                                }
+                            }
                         }
+                        .listRowBackground(Color.clear)
                         .onTapGesture {
                             if readyMsgSubmitted{
                                 store.sendReadyStatus(false)
                                 readyMsgSubmitted = false
                             }
                         }
+                        
                         if canAddStep {
                             addStepButton
                                 .onTapGesture {
@@ -80,8 +90,11 @@ struct HumanInstructionScreen: View {
                                         readyMsgSubmitted = false
                                     }
                                 }
+                                .listRowBackground(Color.clear)
                         }
+                            
                     }
+                    
                 }
 
                 Spacer()
@@ -123,6 +136,9 @@ struct HumanInstructionScreen: View {
             guard timeRemaining > 0 else {
                 if store.currRoom?.hostID == store.myPlayerData.id {
                     return store.next()
+                }
+                else{
+                    store.state = store.state.next
                 }
                 return
             }
@@ -195,6 +211,10 @@ struct HumanInstructionScreen: View {
             RoundedRectangle(cornerRadius: 28)
                 .fill(Color.white)
         )
+    }
+    
+    private func deleteStep(_ index: Int){
+        steps.remove(at: index)
     }
 
     private var addStepButton: some View {

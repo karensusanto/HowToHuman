@@ -337,11 +337,26 @@ final class GameStore: ObservableObject {
         self.currRoom = sharedData.room
         if phase != sharedData.gamePhase {//changed phase
             self.phase = sharedData.gamePhase
-            self.state = state.next
+            if self.state != sharedData.gameState {self.state = state.next} //in case player already go to the next page first before host (players' timer are not in sync)
         }
         if state != sharedData.gameState {//changed state
             self.state = sharedData.gameState
         }
+        
+        self.playerGameDataList = sharedData.playerGameDataList
+        
+        if let myAssignedID = sharedData.assignedQuestionPlayerId{
+            print("Received question assignment")
+            receivedGameData = playerGameDataList.first(where: { $0.id == myAssignedID})
+        }
+        
+        self.myGameData = playerGameDataList.first(where: {$0.id == myGameData.id}) ?? myGameData
+        self.voteResult = sharedData.voteResult
+        
+        if sharedData.assignedQuestionPlayerId != nil{
+            receivedGameData = playerGameDataList.first(where: {$0.id == sharedData.assignedQuestionPlayerId})
+        }
+        
         print("Migrate host: ", sharedData.migrateHost)
         print("New host? ", sharedData.room.hostID == networkManager.myPeerId)
         if sharedData.migrateHost == true && currRoom!.hostID == networkManager.myPeerId {
@@ -350,6 +365,9 @@ final class GameStore: ObservableObject {
             connectionToHost = nil
             print("Receive hostship, begin advertising")
             networkManager.startAdvertising(room: currRoom!)
+            if phase != .none && currRoom?.players.count == 1{// if hostship transfer happens in the middle of the game, leaving only the new host as the only player in the game
+                clearGame(stopAdvertising: false) // game stopped, back to room's lobby as the new host
+            }
         }
         if sharedData.connectToNewHost{
             networkManager.startBrowsing(){rooms in
@@ -368,30 +386,12 @@ final class GameStore: ObservableObject {
                 }
             }
         }
-        self.playerGameDataList = sharedData.playerGameDataList
         
-        if let myAssignedID = sharedData.assignedQuestionPlayerId{
-            print("Received question assignment")
-            receivedGameData = playerGameDataList.first(where: { $0.id == myAssignedID})
-        }
-        
-        self.myGameData = sharedData.playerGameDataList.first(where: {$0.id == myGameData.id}) ?? myGameData
-        self.voteResult = sharedData.voteResult
-        
-        if sharedData.assignedQuestionPlayerId != nil{
-            receivedGameData = playerGameDataList.first(where: {$0.id == sharedData.assignedQuestionPlayerId})
-        }
     }
     
     func handlePlayerGameData(_ gameData: PlayerGameData, connection: NWConnection){
         if let index = playerGameDataList.firstIndex(where: { $0.id == gameData.id }) {
-            playerGameDataList[index] = PlayerGameData(
-                id: gameData.id,
-                question: gameData.question,
-                answer: gameData.answer,
-                experience: gameData.experience,
-                vote: gameData.vote
-            )
+            playerGameDataList[index] = gameData
             
             submittedQuestions += 1
         }
@@ -443,17 +443,16 @@ final class GameStore: ObservableObject {
         do{
             let data = try JSONEncoder().encode(sharedData)
             let envelopedData = try JSONEncoder().encode(MessageEnvelope(type: .sharedGameData, data: data))
-            networkManager.send(data: envelopedData, over: connection, errMsg: "Send shared data to one player failed"){
-                if migrateHost{
-                    self.clearGame() // clear all connections, hopefully all transfer to new host messages have been sent to the players
-                }
-            }
+            networkManager.send(data: envelopedData, over: connection, errMsg: "Send shared data to one player failed")
         }catch {
             print("Encoding failed: ", error)
         }
     }
     
     func shareGameData(voteResult: Float? = nil, migrateHost: Bool = false, connectToNewHost: Bool = false, questionAssignmentList: [UUID:UUID]? = nil){
+        //before sharing, make sure host's own game data is its most updated version
+        //playergamedatalist has the most updated version of every player's data because it's the one that's always updated, due to it being the variable that will be shared to players
+        myGameData = playerGameDataList.first(where: {$0.id == myGameData.id}) ?? myGameData
         
         for (playerId, con) in currentConnections { // send updated shared data to all players
             var sharedData = SharedGameData(
@@ -476,13 +475,7 @@ final class GameStore: ObservableObject {
         print("submitting game data")
         if connectionToHost == nil{
             if let index = playerGameDataList.firstIndex(where: { $0.id == data.id }) {
-                playerGameDataList[index] = PlayerGameData(
-                    id: data.id,
-                    question: data.question,
-                    answer: data.answer,
-                    experience: data.experience,
-                    vote: data.vote
-                )
+                playerGameDataList[index] = data
                 
                 submittedQuestions += 1
             }
@@ -502,8 +495,16 @@ final class GameStore: ObservableObject {
     }
     
     func clearGame(stopAdvertising: Bool = true){
-        self.currRoom = nil
-        self.state = .lobbySearch
+        
+        if stopAdvertising {
+            self.currRoom = nil
+            self.state = .lobbySearch
+            self.myPlayerData.name = ""
+            self.myPlayerData.avatar = ""
+        }
+        else{
+            self.state = .lobby
+        }
         self.joiningRoom = nil
         self.currentConnections.removeAll()
         self.showSettingPopUp = false
@@ -520,8 +521,6 @@ final class GameStore: ObservableObject {
         self.myGameData.experience = nil
         self.myGameData.vote = nil
         self.playerGameDataList.append(myGameData)
-        self.myPlayerData.name = ""
-        self.myPlayerData.avatar = ""
         self.receivedGameData = nil
         self.readyPlayers = 0
         self.submittedQuestions = 0
@@ -564,16 +563,6 @@ final class GameStore: ObservableObject {
     
     func leaveRoomAsHost(completion: (() -> Void)? = nil){
         
-        if currRoom?.players.count == 2 && phase != .none{ // game started, host wants to leave, leaving 1 player left
-            // kick the other player
-            let player = currRoom!.players.first(where: { $0.id != currRoom!.hostID })!
-            kickPlayer(player)
-            // stop advertising
-            networkManager.stop()
-            clearGame()
-            return
-        }
-        
         // delete player's game data if still in asking phase
         if phase == .askHuman {
             playerGameDataList.removeAll(where: { $0.id == networkManager.myPeerId })
@@ -593,11 +582,6 @@ final class GameStore: ObservableObject {
     }
     
     func leaveRoomAsParticipant(on connection: NWConnection, completion: @escaping () -> Void){
-        sendLeaveRoomMsg(on: connection)
-        completion()
-    }
-    
-    func sendLeaveRoomMsg(on connection: NWConnection) {
         do{
             let player = myPlayerData
             let data = try JSONEncoder().encode(player)
@@ -607,6 +591,7 @@ final class GameStore: ObservableObject {
         }catch{
             print("Encoding failed:", error)
         }
+        completion()
     }
     
     func kickPlayer(_ player: Player){

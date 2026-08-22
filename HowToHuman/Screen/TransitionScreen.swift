@@ -138,9 +138,11 @@ struct TransitionScreen: View {
                 skipAnimation()
             }
             
-            if store.showExitRoomPopUp == true{
-                ExitRoomPopUp(isPresented: $store.showExitRoomPopUp)
-            }
+            VStack{
+                if store.showExitRoomPopUp == true{
+                    ExitRoomPopUp(isPresented: $store.showExitRoomPopUp)
+                }
+            }.padding()
         }
         .frame(maxWidth: .infinity)
         .background {

@@ -44,6 +44,7 @@ struct AlienQuestionScreen: View {
             VStack(spacing: 20){
                 
                 HStack {
+                    ExitRoomButton()
                     Color.clear.frame(width: 40, height: 40)
                     Spacer()
                     HTHText(title: "Ask a Human", size: HTHSize.largeTitle, color: HTHColor.yellow)
@@ -145,6 +146,9 @@ struct AlienQuestionScreen: View {
             guard timeRemaining > 0 else {
                 if store.currRoom?.hostID == store.myPlayerData.id {
                     return store.next()
+                }
+                else{
+                    store.state = store.state.next
                 }
                 return
             }

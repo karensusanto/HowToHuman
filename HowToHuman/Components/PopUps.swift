@@ -19,7 +19,7 @@ struct PopUpBuilder: View {
     
     var body: some View {
         VStack(spacing: 20){
-            VStack{
+            VStack(spacing: 10){
                 HTHText(title: title, font: HTHFont.space_grot)
                 HTHText(title: subtitle, size: HTHSize.caption, font: HTHFont.space_grot)
             }
@@ -60,14 +60,16 @@ struct ExitRoomPopUp: View {
     var body: some View {
         PopUpBuilder(isPresented: $isPresented, title: "Exit \(roomName)?", subtitle: subTitle, leftBtnText: "No", rightBtnText: "Yes", leftBtnColor: HTHColor.green, rightBtnColor: .white.opacity(0.3)){
                 
-                //check if the room is gonna be empty, delete room
+                //host is the only one in the room and want to leave the room (game hasn't started)
                 if store.currRoom?.players.count == 1{
                     store.clearGame()
                     store.networkManager.stop()
                 }
                 //check if he's the host
                 else if store.currRoom?.hostID.uuidString == store.networkManager.myPeerId.uuidString{
-                    store.leaveRoomAsHost()
+                    store.leaveRoomAsHost(){
+                        store.clearGame() // clear all connections, hopefully all transfer to new host messages have been sent to the players
+                    }
                 }
                 
                 else{
@@ -82,7 +84,16 @@ struct ExitRoomPopUp: View {
                 let hostID = store.currRoom?.hostID.uuidString
                 let playerID = store.networkManager.myPeerId.uuidString
                 
-                if store.currRoom?.players.count == 1 {
+                if store.currRoom?.players.count == 2 {
+                    
+                    if hostID == playerID {
+                        subTitle = "Leaving will end the game — only 1 player would remain, and your hostship will be transferred to the next player"
+                    }
+                    else{
+                        subTitle = "Leaving will end the game - only 1 player would remain."
+                    }
+                }
+                else if store.currRoom?.players.count == 1 {
                     subTitle = "The room will be deleted"
                 }
                 else if hostID == playerID {

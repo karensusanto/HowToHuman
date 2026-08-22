@@ -87,6 +87,9 @@ struct AlienNarrationScreen: View {
                 if store.currRoom?.hostID == store.myPlayerData.id {
                     return store.next()
                 }
+                else{
+                    store.state = store.state.next
+                }
                 return
             }
             timeRemaining -= 1

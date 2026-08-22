@@ -35,7 +35,7 @@ struct RootView: View {
             case .narrateExperience:
                 AlienNarrationScreen()
             case .shareExperience:
-                EmptyView()
+                DisplayScreen()
             case .voting:
                 EmptyView()
             case .result:
