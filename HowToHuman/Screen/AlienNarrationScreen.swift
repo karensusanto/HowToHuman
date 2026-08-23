@@ -22,9 +22,7 @@ struct AlienNarrationScreen: View {
 
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
-    private var isReady: Bool {
-        !narrations.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
+    @State var isReady: Bool = false
     
     @State private var narrationsLen : Int = 0
 
@@ -62,10 +60,7 @@ struct AlienNarrationScreen: View {
                 if readyMsgSubmitted{
                     HTHText(title: "Waiting for other players...", size: HTHSize.caption, font: HTHFont.space_grot)
                 }
-                PrimaryButton(title: "Ready", isDisabled: !isReady || readyMsgSubmitted) {
-                    store.sendReadyStatus(true)
-                    readyMsgSubmitted = true
-                }
+                ReadyButton(readyMsgSubmitted: $readyMsgSubmitted, isReady: $isReady)
             }
             .padding()
             
@@ -80,6 +75,7 @@ struct AlienNarrationScreen: View {
             HTHGameBackground()
         }
         .onAppear{
+            store.playChime()
             steps = store.myGameData.answer
             timeRemaining = (store.currRoom?.timerMode.seconds(for: .question)) ?? 0
         }
@@ -88,6 +84,10 @@ struct AlienNarrationScreen: View {
                 store.myGameData.experience = narrations
             }
             store.submitGameData(data: store.myGameData)
+            store.vibrate()
+        }
+        .onChange(of: narrations){
+            isReady = !narrations.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
         .onReceive(timer) { _ in
             guard timeRemaining > 0 else {

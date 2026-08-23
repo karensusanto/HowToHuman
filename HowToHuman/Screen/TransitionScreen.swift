@@ -12,64 +12,67 @@ struct TransitionScreen: View {
     
     let instructions: Dictionary<GamePhase, [(String, CGFloat, String)]> = [
         .none: [],
-        .askHuman: [("**You are an alien.**", HTHSize.body, HTHFont.slackey),
-                    ("You and your team have just discovered Earth.\n\n", HTHSize.body, HTHFont.slackey),
-                    ("\n\n", HTHSize.body, HTHFont.slackey),
-                    ("Curious, you want to experience human life for yourselves.", HTHSize.body, HTHFont.slackey),
-                    ("First, you need to know how humans do things.", HTHSize.body, HTHFont.slackey),
-                    ("\n\n", HTHSize.body, HTHFont.slackey),
-                    ("Ask a human:", HTHSize.body, HTHFont.slackey),
-                    ("**\"How do you...?\"**", HTHSize.title, HTHFont.slackey),
-                    ("\n", HTHSize.title, HTHFont.slackey),
-                    ("_The simpler, the better_", HTHSize.body, HTHFont.slackey),
-                    ("\n\n", HTHSize.body, HTHFont.slackey)
+        .askHuman: [("**You are an alien.**", HTHSize.title, HTHFont.space_grot),
+                    ("You and your team have just discovered Earth.\n\n", HTHSize.title, HTHFont.space_grot),
+                    ("\n\n", HTHSize.title, HTHFont.space_grot),
+                    ("Curious, you want to experience human life for yourselves.", HTHSize.title, HTHFont.space_grot),
+                    ("But first, you need to know how humans do things.", HTHSize.title, HTHFont.space_grot),
+                    ("\n\n", HTHSize.title, HTHFont.space_grot),
+                    ("Ask a human:", HTHSize.title, HTHFont.space_grot),
+                    ("**\"How do you...?\"**", HTHSize.title, HTHFont.space_grot),
+                    ("The simpler, the better", HTHSize.title, HTHFont.space_grot),
+                    ("\n\n", HTHSize.title, HTHFont.space_grot)
                    ],
         
         
-        .answerAlien: [("**Now, it's your turn, human.**", HTHSize.body, HTHFont.slackey),
-                       ("\n\n", HTHSize.body, HTHFont.slackey),
-                       ("An alien needs your help understanding how to be humans", HTHSize.body, HTHFont.slackey),
-                       ("\n\n", HTHSize.body, HTHFont.slackey),
-                       ("**Answer their question as clearly as you can.**", HTHSize.body, HTHFont.slackey),
-                       ("\n\n", HTHSize.body, HTHFont.slackey),
-                       ("Beware: alien knows nothing about humans and might take everything you say literally.", HTHSize.body, HTHFont.slackey),
-                       ("\n\n", HTHSize.body, HTHFont.slackey)
-                       //                           ("_What could possibly go wrong?_", HTHSize.body)
+        .answerAlien: [("**Now, it's your turn, human.**", HTHSize.smallTitle, HTHFont.space_grot),
+                       ("\n\n", HTHSize.smallTitle, HTHFont.space_grot),
+                       ("An alien needs your help understanding how to be humans", HTHSize.smallTitle, HTHFont.space_grot),
+                       ("\n\n", HTHSize.smallTitle, HTHFont.space_grot),
+                       ("Answer their question as clearly as you can.", HTHSize.smallTitle, HTHFont.space_grot),
+                       ("\n\n", HTHSize.smallTitle, HTHFont.space_grot),
+                       ("Beware: alien knows nothing about humans and might take everything you say literally.", HTHSize.smallTitle, HTHFont.space_grot),
+                       ("\n\n", HTHSize.smallTitle, HTHFont.space_grot),
+                       ("_What could possibly go wrong?_", HTHSize.smallTitle, HTHFont.space_grot),
+                       ("\n\n", HTHSize.smallTitle, HTHFont.space_grot)
                       ],
 
-        .narrateExperience: [("**Aliens, the humans have answered.**", HTHSize.body, HTHFont.slackey),
-                             ("\n\n", HTHSize.body, HTHFont.slackey),
-                             ("Go down to Earth with the guidance the humans provided.", HTHSize.body, HTHFont.slackey),
-                             ("\n\n", HTHSize.body, HTHFont.slackey),
-                             ("**Follow their instruction, write down your experience.**", HTHSize.body, HTHFont.slackey),
-                             ("\n\n", HTHSize.body, HTHFont.slackey),
-                             ("What happened?", HTHSize.body, HTHFont.slackey),
-                             ("\n\n", HTHSize.body, HTHFont.slackey),
-                             ("_Your fellow aliens will want to know._", HTHSize.body, HTHFont.slackey),
-                             ("\n\n", HTHSize.body, HTHFont.slackey)
+        .narrateExperience: [("**Aliens, the humans have answered.**", HTHSize.title, HTHFont.space_grot),
+                             ("\n\n", HTHSize.title, HTHFont.space_grot),
+                             ("Go down to Earth with the guidance the humans provided.", HTHSize.title, HTHFont.space_grot),
+                             ("\n\n", HTHSize.title, HTHFont.space_grot),
+                             ("Follow their instruction, write down your experience.", HTHSize.title, HTHFont.space_grot),
+                             ("What happened?", HTHSize.title, HTHFont.space_grot),
+                             ("\n\n", HTHSize.title, HTHFont.space_grot),
+                             ("_Your fellow aliens will want to know._", HTHSize.title, HTHFont.space_grot),
+                             ("\n\n", HTHSize.title, HTHFont.space_grot)
                             ],
 
 
-        .shareExperience: [("**Welcome back to the spaceship, aliens.**", HTHSize.body, HTHFont.slackey),
-                            ("\n\n", HTHSize.body, HTHFont.slackey),
-                            ("Time to share our experience", HTHSize.body, HTHFont.slackey),
-                            ("\n\n", HTHSize.body, HTHFont.slackey),
-                            ("Let's see who goes first.", HTHSize.body, HTHFont.slackey),
-                            ("\n\n", HTHSize.body, HTHFont.slackey)
+        .shareExperience: [("**Welcome back to the spaceship, aliens.**", HTHSize.title, HTHFont.space_grot),
+                            ("\n\n", HTHSize.title, HTHFont.space_grot),
+                            ("Time to share our experience", HTHSize.title, HTHFont.space_grot),
+                            ("\n\n", HTHSize.title, HTHFont.space_grot),
+                            ("Let's see who goes first.", HTHSize.title, HTHFont.space_grot),
+                            ("\n\n", HTHSize.title, HTHFont.space_grot)
                            ],
 
-        .voting: [("Now that everyone's shared their experiences, answer this:", HTHSize.body, HTHFont.slackey),
-                  ("\n\n", HTHSize.body, HTHFont.slackey),
-                  ("Would you revisit Earth?", HTHSize.title, HTHFont.slackey),
-                  ("\n\n", HTHSize.body, HTHFont.slackey),
-                  ("**Cast your vote.**", HTHSize.body, HTHFont.slackey),
-                  ("\n\n", HTHSize.body, HTHFont.slackey),
+        .voting: [("Now that everyone's shared their experiences, answer this:", HTHSize.title, HTHFont.space_grot),
+                  ("\n\n", HTHSize.title, HTHFont.space_grot),
+                  ("**Would you revisit Earth?**", HTHSize.title, HTHFont.space_grot),
+                  ("\n\n", HTHSize.title, HTHFont.space_grot),
+                  ("Cast your vote.", HTHSize.title, HTHFont.space_grot),
+                  ("\n\n", HTHSize.title, HTHFont.space_grot),
                  ]
     ]
     
     @State private var visibleRows: [Bool] = [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false]
     @State private var animationWorkItems: [DispatchWorkItem] = []
-//    @State private var assignmentList: [UUID: UUID] = [:]
+    private var showFootnote : Bool {
+        visibleRows.filter{$0}.count == instructions[store.phase]!.count
+    }
+    @State private var showDelayedContent = false
+
     var body: some View {
         ZStack{
             Color.clear.ignoresSafeArea()
@@ -79,12 +82,13 @@ struct TransitionScreen: View {
                     Spacer()
                 }
                 Spacer()
+                
+                let instruction = instructions[store.phase]!
                 VStack{
-                    let instruction = instructions[store.phase]!
                     
                     ForEach(instruction.indices, id:\.self){ index in
                         if instruction[index].0 == "\n\n"{
-                            Color.clear.frame(width: 40, height: 40)
+                            Color.clear.frame(width: 40, height: 25)
                         } else if instruction[index].0 == "\n"{
                             Color.clear.frame(width: 40, height: 10)
                         } else {
@@ -97,45 +101,46 @@ struct TransitionScreen: View {
                                 font: HTHFont.space_grot
                             )
                             .opacity(visibleRows[index] ? 1.0 : 0.0)
+                            .lineLimit(5)
                             .multilineTextAlignment(.center)
                             .animation(.easeIn(duration: 0.6), value: visibleRows[index])
                             .tracking(1.5)
                         }
                     }
                     
-                }.padding(.horizontal, 40)
+                }.padding(.horizontal, 30)
                 Spacer()
                 
-                if store.currRoom?.hostID == store.myPlayerData.id {
-                    PrimaryButton(title: "CONTINUE"){
-                        store.next()
+                if showFootnote {
+                    if showDelayedContent{
+                        if store.currRoom?.hostID == store.myPlayerData.id {
+                            PrimaryButton(title: "CONTINUE"){
+                                store.next()
+                            }
+                        }else{
+                            HTHText(title: "Wait for host to continue", font: HTHFont.space_grot)
+                        }
                     }
-                }else{
-                    HTHText(title: "Wait for host to continue", font: HTHFont.space_grot)
                 }
                 
             }.padding()
             .onAppear{
-//                print(store.phase)
-//                print("Submitted game data: ", store.submittedGameData)
-//                print("Player count: ", store.currRoom?.players.count ?? 0)
-//                print("Host id: ", store.currRoom?.hostID ?? "")
-//                print("Player id: ", store.myPlayerData.id)
-//                if (store.phase == .answerAlien && store.currRoom?.hostID == store.myPlayerData.id && store.submittedGameData == store.currRoom?.players.count){
-//                    assignmentList = store.assignQuestions()
-//                    print(assignmentList)
-//                }
                 startSequencedAnimation()
             }
-//            .onChange(of: store.submittedGameData){
-//                print("Submitted game data: ", store.submittedGameData)
-//                if store.phase == .answerAlien && store.currRoom?.hostID == store.myPlayerData.id && store.submittedGameData == store.currRoom?.players.count && assignmentList.isEmpty{
-//                    assignmentList = store.assignQuestions()
-//                    print(assignmentList)
-//                }
-//            }
             .onTapGesture {
                 skipAnimation()
+            }
+            .onChange(of: showFootnote) {
+                if showFootnote {
+                    Task {
+                        try? await Task.sleep(for: .seconds(1.5))
+                        withAnimation {
+                            showDelayedContent = true
+                        }
+                    }
+                } else {
+                    showDelayedContent = false
+                }
             }
             
             VStack{
