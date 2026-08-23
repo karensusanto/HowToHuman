@@ -51,13 +51,8 @@ struct ReadyButton: View {
     
     var body: some View {
         PrimaryButton(title: "Ready", isDisabled: !isReady || readyMsgSubmitted) {
-            if readyMsgSubmitted {
-                store.sendReadyStatus(false)
-            }
-            else{
-                store.sendReadyStatus(true)
-            }
-            readyMsgSubmitted.toggle()
+            store.sendReadyStatus(true)
+            readyMsgSubmitted = true
         }
     }
 }
