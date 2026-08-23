@@ -19,9 +19,6 @@ struct DisplayScreen: View {
 
     private let purpleGlow = Color(red: 0.70, green: 0.60, blue: 0.90)
 
-    // TEMP placeholder until custom art for the alien-in-UFO graphic is provided
-    private let alienUFOPlaceholder = "🛸"
-
     private var isHost: Bool {
         store.currRoom?.hostID == store.myPlayerData.id
     }
@@ -37,10 +34,6 @@ struct DisplayScreen: View {
             return "A Fellow Alien"
         }
         return player.name
-    }
-
-    private var isLastExperience: Bool {
-        store.currentExperienceIndex >= store.playerGameDataList.count - 1
     }
 
     var body: some View {
@@ -169,16 +162,14 @@ private extension DisplayScreen {
     var narrationStage: some View {
         VStack(spacing: 5) {
             VStack(alignment: .trailing, spacing: 8) {
-                HTHText(title: currentGameData?.experience ?? "No experience shared", font: HTHFont.space_grot, color: .black)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .opacity(isHost || transcriptRevealed ? 1 : 0)
-                    .overlay {
-                        if !isHost && !transcriptRevealed {
-                            HTHText(title: "Listen to your friends' experience.", font: HTHFont.space_grot, weight: .medium, color: .black)
-                                .multilineTextAlignment(.center)
-                        }
-                    }
+                if isHost || transcriptRevealed {
+                    HTHText(title: currentGameData?.experience ?? "No experience shared", font: HTHFont.space_grot, color: .black)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    HTHText(title: "Listen to your friends' experience.", font: HTHFont.space_grot, weight: .medium, color: .black)
+                        .multilineTextAlignment(.center)
+                }
 
                 HTHText(
                     title: isHost ? "[Read it out loud]" : (transcriptRevealed ? "[tap to hide transcript]" : "[tap to reveal transcript]"),
@@ -208,7 +199,8 @@ private extension DisplayScreen {
                 .fill(Color.white)
                 .frame(width: 18, height: 10)
 
-            Text(alienUFOPlaceholder)
+            // TEMP placeholder until custom art for the alien-in-UFO graphic is provided
+            Text("🛸")
                 .font(.system(size: 90))
         }
     }
@@ -232,20 +224,17 @@ private extension DisplayScreen {
     }
 
     var reactionBubbleOverlay: some View {
-        VStack {
-            Spacer()
-            ZStack {
-                ForEach(store.bubbles) { bubble in
-                    Text(bubble.emoji)
-                        .font(.system(size: 32))
-                        .offset(x: bubble.x, y: bubble.y)
-                        .opacity(bubble.opacity)
-                        .scaleEffect(bubble.scale)
-                }
+        ZStack {
+            ForEach(store.bubbles) { bubble in
+                Text(bubble.emoji)
+                    .font(.system(size: 32))
+                    .offset(x: bubble.x, y: bubble.y)
+                    .opacity(bubble.opacity)
+                    .scaleEffect(bubble.scale)
             }
-            .frame(height: 1)
-            Spacer().frame(height: 120)
         }
+        .frame(maxHeight: .infinity, alignment: .bottom)
+        .padding(.bottom, 120)
         .allowsHitTesting(false)
     }
 
@@ -272,7 +261,7 @@ private extension DisplayScreen {
             }
         } else {
             if isHost {
-                PrimaryButton(title: isLastExperience ? "Finish" : "Next Experience") {
+                PrimaryButton(title: store.currentExperienceIndex >= store.playerGameDataList.count - 1 ? "Finish" : "Next Experience") {
                     store.advanceExperience()
                 }
             } else {
