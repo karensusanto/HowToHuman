@@ -125,7 +125,6 @@ struct TransitionScreen: View {
                 
             }.padding()
             .onAppear{
-                store.phase = .answerAlien
                 startSequencedAnimation()
             }
             .onTapGesture {
