@@ -120,6 +120,12 @@ final class GameStore: ObservableObject {
                 self?.handleReadiness(readiness: readiness)
             }
         }
+
+        networkManager.onReceiveVote = { [weak self] voteData in
+            Task { @MainActor in
+                self?.handleVote(voteData)
+            }
+        }
     }
     
     func initAudioPlayer(sound: String) {
@@ -183,7 +189,34 @@ final class GameStore: ObservableObject {
             next()
         }
     }
-    
+
+    // host-only: records one player's vote and, once everyone who's still in the room has voted, resolves it
+    func handleVote(_ voteData: PlayerGameData){
+        if let index = playerGameDataList.firstIndex(where: { $0.id == voteData.id }) {
+            playerGameDataList[index].vote = voteData.vote
+        }
+        checkVotingComplete()
+    }
+
+    private var castVotes: [Float] {
+        playerGameDataList.filter { data in currRoom?.players.contains(where: { $0.id == data.id }) == true }.compactMap(\.vote)
+    }
+
+    func checkVotingComplete(){
+        if castVotes.count >= currRoom?.players.count ?? 0 {
+            resolveVote()
+        } else {
+            shareGameData() // keep everyone's "X/Y voted" progress live
+        }
+    }
+
+    // host-only: tallies votes cast so far (non-voters excluded) as a yes-fraction, 0.5 exactly is a tie
+    func resolveVote(){
+        let yesCount = castVotes.filter { $0 == 1.0 }.count
+        let result: Float = castVotes.isEmpty ? 0.5 : Float(yesCount) / Float(castVotes.count)
+        next(voteResult: result)
+    }
+
     func next(voteResult: Float? = nil, questionAssignmentList: [UUID:UUID]? = nil){
         print("next")
         //only move to next phase after transition is done or when game started
@@ -197,7 +230,7 @@ final class GameStore: ObservableObject {
         }
         state = state.next
         readyPlayers = 0
-        shareGameData()
+        shareGameData(voteResult: voteResult, questionAssignmentList: questionAssignmentList)
     }
 
     // host-only: reveals the current player's narrated experience after the steps recap
@@ -414,9 +447,9 @@ final class GameStore: ObservableObject {
         }
     }
     
-    func sendDataToOnePlayer(on connection: NWConnection, voteResult: Float? = nil, migrateHost: Bool = false, connectToNewHost: Bool = false){
+    func sendDataToOnePlayer(on connection: NWConnection, migrateHost: Bool = false, connectToNewHost: Bool = false){
         let sharedData = SharedGameData(
-            gamePhase: phase, gameState: state, room: currRoom!, playerGameDataList: playerGameDataList, migrateHost: migrateHost, connectToNewHost: connectToNewHost, currentExperienceIndex: currentExperienceIndex, experienceRevealed: experienceRevealed
+            gamePhase: phase, gameState: state, room: currRoom!, voteResult: voteResult, playerGameDataList: playerGameDataList, migrateHost: migrateHost, connectToNewHost: connectToNewHost, currentExperienceIndex: currentExperienceIndex, experienceRevealed: experienceRevealed
         )
         do{
             let data = try JSONEncoder().encode(sharedData)
@@ -428,13 +461,15 @@ final class GameStore: ObservableObject {
     }
     
     func shareGameData(voteResult: Float? = nil, migrateHost: Bool = false, connectToNewHost: Bool = false, questionAssignmentList: [UUID:UUID]? = nil){
+        if let voteResult { self.voteResult = voteResult }
+
         //before sharing, make sure host's own game data is its most updated version
         //playergamedatalist has the most updated version of every player's data because it's the one that's always updated, due to it being the variable that will be shared to players
         myGameData = playerGameDataList.first(where: {$0.id == myGameData.id}) ?? myGameData
-        
+
         for (playerId, con) in currentConnections { // send updated shared data to all players
             var sharedData = SharedGameData(
-                gamePhase: phase, gameState: state, room: currRoom!, playerGameDataList: playerGameDataList, migrateHost: migrateHost, connectToNewHost: connectToNewHost, currentExperienceIndex: currentExperienceIndex, experienceRevealed: experienceRevealed
+                gamePhase: phase, gameState: state, room: currRoom!, voteResult: self.voteResult, playerGameDataList: playerGameDataList, migrateHost: migrateHost, connectToNewHost: connectToNewHost, currentExperienceIndex: currentExperienceIndex, experienceRevealed: experienceRevealed
             )
             if questionAssignmentList != nil {
                 sharedData.assignedQuestionPlayerId = questionAssignmentList?[playerId]
@@ -618,7 +653,44 @@ final class GameStore: ObservableObject {
             }
         }
     }
-    
+
+    func submitVote(yes: Bool){
+        var data = myGameData
+        data.vote = yes ? 1.0 : 0.0
+        if connectionToHost == nil{
+            handleVote(data)
+        }
+        else{
+            do{
+                let encoded = try JSONEncoder().encode(data)
+                let envelopedData = try JSONEncoder().encode(MessageEnvelope(type: .vote, data: encoded))
+                networkManager.send(data: envelopedData, over: connectionToHost!, errMsg: "Send vote failed")
+            }catch {
+                print("Encoding failed: ", error)
+            }
+        }
+    }
+
+    // host-only: resets game-specific state and returns everyone still in the room to the lobby for a new round
+    func playAgain(){
+        phase = .none
+        voteResult = nil
+        currentExperienceIndex = 0
+        experienceRevealed = false
+        for index in playerGameDataList.indices{
+            playerGameDataList[index].question = nil
+            playerGameDataList[index].answer = nil
+            playerGameDataList[index].experience = nil
+            playerGameDataList[index].vote = nil
+        }
+        myGameData = playerGameDataList.first(where: {$0.id == myGameData.id}) ?? myGameData
+        receivedGameData = nil
+        readyPlayers = 0
+        submittedQuestions = 0
+        state = .lobby
+        shareGameData()
+    }
+
     func assignQuestions() -> [UUID: UUID]{
         var assignmentList: [UUID: UUID] = [:]
         for (i, gameData) in playerGameDataList.enumerated(){

@@ -29,6 +29,7 @@ enum MessageType: Codable{
     case leaveNotice
     case reaction
     case readiness
+    case vote
 }
 
 struct MessageEnvelope: Codable{
