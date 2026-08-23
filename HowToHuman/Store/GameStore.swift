@@ -41,6 +41,9 @@ final class GameStore: ObservableObject {
     
     @Published var readyPlayers: Int = 0
     @Published var submittedQuestions: Int = 0
+
+    @Published var currentExperienceIndex: Int = 0
+    @Published var experienceRevealed: Bool = false
     
     private var soundPlayer: AVAudioPlayer?
     private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
@@ -188,9 +191,31 @@ final class GameStore: ObservableObject {
             print("Phase before next: ", phase)
             phase = phase.next
         }
+        if state == .transitionToShareExperience {
+            currentExperienceIndex = 0
+            experienceRevealed = false
+        }
         state = state.next
         readyPlayers = 0
         shareGameData()
+    }
+
+    // host-only: reveals the current player's narrated experience after the steps recap
+    func revealExperience(){
+        experienceRevealed = true
+        shareGameData()
+    }
+
+    // host-only: moves on to the next player's experience, or into voting once everyone's been shown
+    func advanceExperience(){
+        if currentExperienceIndex < playerGameDataList.count - 1{
+            currentExperienceIndex += 1
+            experienceRevealed = false
+            shareGameData()
+        }
+        else{
+            next()
+        }
     }
     
     func handleJoinRequest(_ request: JoinRequest, connection: NWConnection)  {
@@ -294,7 +319,9 @@ final class GameStore: ObservableObject {
         }
         
         self.playerGameDataList = sharedData.playerGameDataList
-        
+        self.currentExperienceIndex = sharedData.currentExperienceIndex
+        self.experienceRevealed = sharedData.experienceRevealed
+
         if let myAssignedID = sharedData.assignedQuestionPlayerId{
             print("Received question assignment")
             receivedGameData = playerGameDataList.first(where: { $0.id == myAssignedID})
@@ -376,7 +403,8 @@ final class GameStore: ObservableObject {
         let bubbleEncoded = try! JSONEncoder().encode(bubble)
         let envelopedData = try! JSONEncoder().encode(MessageEnvelope(type: .reaction, data: bubbleEncoded))
         if currRoom?.hostID != networkManager.myPeerId{// if player, send to host
-            networkManager.send(data: envelopedData, over: connectionToHost!, errMsg: "Send reaction failed")
+            guard let connectionToHost else { return } // no host connection yet (e.g. mid host migration)
+            networkManager.send(data: envelopedData, over: connectionToHost, errMsg: "Send reaction failed")
         }
         else{// if host, send to everyone
             for (playerID, con) in currentConnections{
@@ -388,7 +416,7 @@ final class GameStore: ObservableObject {
     
     func sendDataToOnePlayer(on connection: NWConnection, voteResult: Float? = nil, migrateHost: Bool = false, connectToNewHost: Bool = false){
         let sharedData = SharedGameData(
-            gamePhase: phase, gameState: state, room: currRoom!, playerGameDataList: playerGameDataList, migrateHost: migrateHost, connectToNewHost: connectToNewHost
+            gamePhase: phase, gameState: state, room: currRoom!, playerGameDataList: playerGameDataList, migrateHost: migrateHost, connectToNewHost: connectToNewHost, currentExperienceIndex: currentExperienceIndex, experienceRevealed: experienceRevealed
         )
         do{
             let data = try JSONEncoder().encode(sharedData)
@@ -406,7 +434,7 @@ final class GameStore: ObservableObject {
         
         for (playerId, con) in currentConnections { // send updated shared data to all players
             var sharedData = SharedGameData(
-                gamePhase: phase, gameState: state, room: currRoom!, playerGameDataList: playerGameDataList, migrateHost: migrateHost, connectToNewHost: connectToNewHost
+                gamePhase: phase, gameState: state, room: currRoom!, playerGameDataList: playerGameDataList, migrateHost: migrateHost, connectToNewHost: connectToNewHost, currentExperienceIndex: currentExperienceIndex, experienceRevealed: experienceRevealed
             )
             if questionAssignmentList != nil {
                 sharedData.assignedQuestionPlayerId = questionAssignmentList?[playerId]
@@ -474,6 +502,8 @@ final class GameStore: ObservableObject {
         self.receivedGameData = nil
         self.readyPlayers = 0
         self.submittedQuestions = 0
+        self.currentExperienceIndex = 0
+        self.experienceRevealed = false
         if stopAdvertising{
             networkManager.stop()
         }

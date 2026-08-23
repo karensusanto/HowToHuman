@@ -53,6 +53,8 @@ struct SharedGameData: Codable, Sendable {
     var migrateHost: Bool
     var connectToNewHost: Bool
     var assignedQuestionPlayerId: UUID?
+    var currentExperienceIndex: Int = 0
+    var experienceRevealed: Bool = false
 }
 
 struct JoinRequest: Codable, Sendable {
