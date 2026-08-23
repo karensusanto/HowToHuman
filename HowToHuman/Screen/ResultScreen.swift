@@ -75,21 +75,23 @@ struct ResultScreen: View {
             }
             .padding()
 
-            if isHost && showPlayAgainPrompt {
-                PopUpBuilder(
-                    isPresented: $showPlayAgainPrompt,
-                    title: "Play Again?",
-                    subtitle: "",
-                    leftBtnText: "Yes",
-                    rightBtnText: "No",
-                    leftBtnColor: HTHColor.green,
-                    rightBtnColor: HTHColor.purple,
-                    leftAction: { store.playAgain() }
-                ) {
-                    showPlayAgainPrompt = false
-                    store.showExitRoomPopUp = true
+            VStack {
+                if isHost && showPlayAgainPrompt {
+                    PopUpBuilder(
+                        isPresented: $showPlayAgainPrompt,
+                        title: "Play Again?",
+                        subtitle: "",
+                        leftBtnText: "Yes",
+                        rightBtnText: "No",
+                        leftBtnColor: HTHColor.green,
+                        rightBtnColor: HTHColor.purple,
+                        leftAction: { store.playAgain() }
+                    ) {
+                        showPlayAgainPrompt = false
+                        store.showExitRoomPopUp = true
+                    }
                 }
-            }
+            }.padding()
 
             VStack {
                 if store.showExitRoomPopUp {
@@ -136,6 +138,7 @@ private extension ResultScreen {
                 ForEach(store.currRoom?.players ?? [], id: \.id) { player in
                     if let position = positions[player.id] {
                         AvatarLobbyView(player: player) {}
+                            .scaleEffect(clusterScale)
                             .position(x: position.x, y: position.y + clusterYOffset)
                             .opacity(clusterOpacity)
                     }
@@ -149,13 +152,22 @@ private extension ResultScreen {
         .animation(.easeInOut(duration: 2.5), value: descended)
     }
 
-    // Yes: drift down toward Earth. No: drift up and fade into space. Tie: hold in place.
+    // Yes: drift down and shrink onto Earth. No: drift up and shrink out into space. Tie: hold in place.
     var clusterYOffset: CGFloat {
         guard descended else { return 0 }
         switch outcome {
         case .visitAgain: return 140
         case .wontVisit: return -160
         case .tie: return 0
+        }
+    }
+
+    var clusterScale: CGFloat {
+        guard descended else { return 1 }
+        switch outcome {
+        case .visitAgain: return 0.5
+        case .wontVisit: return 0.3
+        case .tie: return 1
         }
     }
 
