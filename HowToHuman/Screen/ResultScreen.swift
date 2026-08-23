@@ -11,8 +11,17 @@ struct ResultScreen: View {
     @EnvironmentObject var store: GameStore
 
     @State private var positions: [UUID: PlayerPosition] = [:]
-    @State private var descended: Bool = false
-    @State private var showPlayAgainPrompt: Bool = false
+    @State private var descended: Bool
+    @State private var showPlayAgainPrompt: Bool
+
+    // preview-only: seeding either skips the real descend/reveal animation timers, showing a stable end-state instead
+    private let skipIntroAnimation: Bool
+
+    init(previewDescended: Bool? = nil, previewShowPlayAgainPrompt: Bool? = nil) {
+        _descended = State(initialValue: previewDescended ?? false)
+        _showPlayAgainPrompt = State(initialValue: previewShowPlayAgainPrompt ?? false)
+        skipIntroAnimation = previewDescended != nil || previewShowPlayAgainPrompt != nil
+    }
 
     private enum Outcome {
         case visitAgain, wontVisit, tie
@@ -94,6 +103,7 @@ struct ResultScreen: View {
         }
         .onAppear {
             store.playChime()
+            guard !skipIntroAnimation else { return }
             withAnimation(.easeInOut(duration: 2.5)) {
                 descended = true
             }
@@ -155,12 +165,69 @@ private extension ResultScreen {
     }
 }
 
-#Preview {
+// MARK: - Previews
+@MainActor
+private func previewResultStore(voteResult: Float?, asHost: Bool) -> GameStore {
     let motionManager = MotionManager()
-    let store = GameStore(
-        motionManager: motionManager
-    )
-    ResultScreen()
-    .environmentObject(store)
-    .environmentObject(motionManager)
+    let store = GameStore(motionManager: motionManager)
+
+    let cho = Player(id: asHost ? store.networkManager.myPeerId : UUID(), name: "Cho", avatar: "spaceship-yellow")
+    let karen = Player(id: asHost ? UUID() : store.networkManager.myPeerId, name: "Karen", avatar: "spaceship-blue")
+    let baeni = Player(id: UUID(), name: "Baeni", avatar: "spaceship-pink")
+
+    store.currRoom = Room(name: "Cho's Room", hostID: cho.id, players: [cho, karen, baeni])
+    store.myPlayerData = asHost ? cho : karen
+    store.playerGameDataList = [cho, karen, baeni].map { PlayerGameData(id: $0.id) }
+    store.voteResult = voteResult
+
+    return store
+}
+
+#Preview("Yes · Host") {
+    let store = previewResultStore(voteResult: 1.0, asHost: true)
+    ResultScreen(previewDescended: true, previewShowPlayAgainPrompt: true)
+        .environmentObject(store)
+        .environmentObject(store.motionManager)
+}
+
+#Preview("Yes · Listener") {
+    let store = previewResultStore(voteResult: 1.0, asHost: false)
+    ResultScreen(previewDescended: true, previewShowPlayAgainPrompt: false)
+        .environmentObject(store)
+        .environmentObject(store.motionManager)
+}
+
+#Preview("No · Host") {
+    let store = previewResultStore(voteResult: 0.0, asHost: true)
+    ResultScreen(previewDescended: true, previewShowPlayAgainPrompt: true)
+        .environmentObject(store)
+        .environmentObject(store.motionManager)
+}
+
+#Preview("No · Listener") {
+    let store = previewResultStore(voteResult: 0.0, asHost: false)
+    ResultScreen(previewDescended: true, previewShowPlayAgainPrompt: false)
+        .environmentObject(store)
+        .environmentObject(store.motionManager)
+}
+
+#Preview("Tie · Host") {
+    let store = previewResultStore(voteResult: 0.5, asHost: true)
+    ResultScreen(previewDescended: true, previewShowPlayAgainPrompt: true)
+        .environmentObject(store)
+        .environmentObject(store.motionManager)
+}
+
+#Preview("Tie · Listener") {
+    let store = previewResultStore(voteResult: 0.5, asHost: false)
+    ResultScreen(previewDescended: true, previewShowPlayAgainPrompt: false)
+        .environmentObject(store)
+        .environmentObject(store.motionManager)
+}
+
+#Preview("Just Arrived · Pre-descend") {
+    let store = previewResultStore(voteResult: 1.0, asHost: true)
+    ResultScreen(previewDescended: false, previewShowPlayAgainPrompt: false)
+        .environmentObject(store)
+        .environmentObject(store.motionManager)
 }
