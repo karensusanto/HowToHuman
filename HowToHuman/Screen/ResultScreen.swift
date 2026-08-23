@@ -120,14 +120,17 @@ struct ResultScreen: View {
 
 private extension ResultScreen {
     var earthGraphic: some View {
-        VStack {
-            Spacer()
-            Image("earth")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 500)
-                .offset(y: 250)
-                .opacity(outcome == .wontVisit ? 0.6 : 1)
+        GeometryReader { geo in
+            VStack {
+                Spacer()
+                Image("earth")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: geo.size.width * 1.3)
+                    .offset(y: 250)
+                    .opacity(outcome == .wontVisit ? 0.6 : 1)
+            }
+            .frame(width: geo.size.width)
         }
         .ignoresSafeArea(edges: .bottom)
     }
@@ -193,6 +196,13 @@ private func previewResultStore(voteResult: Float?, asHost: Bool) -> GameStore {
     store.voteResult = voteResult
 
     return store
+}
+
+#Preview("Live · Watch It Animate (Yes)") {
+    let store = previewResultStore(voteResult: 1.0, asHost: true)
+    ResultScreen() // no preview overrides: runs the real onAppear animation, needs Xcode's Live Preview to actually play
+        .environmentObject(store)
+        .environmentObject(store.motionManager)
 }
 
 #Preview("Yes · Host") {
