@@ -11,6 +11,9 @@ struct DisplayScreen: View {
     @EnvironmentObject var store: GameStore
 
     @State private var transcriptRevealed: Bool
+    // local-only: lets anyone swipe back to re-check the steps after the narration's revealed,
+    // without touching store.experienceRevealed (that stays host-controlled/synced)
+    @State private var showingStepsPeek: Bool = false
 
     // previewTranscriptRevealed exists only so #Preview can seed the listener's local reveal toggle
     init(previewTranscriptRevealed: Bool = false) {
@@ -55,7 +58,7 @@ struct DisplayScreen: View {
 
                 pageIndicator
 
-                if store.experienceRevealed {
+                if store.experienceRevealed && !showingStepsPeek {
                     reactionRow
                 }
 
@@ -82,6 +85,7 @@ struct DisplayScreen: View {
         }
         .onChange(of: store.currentExperienceIndex) {
             transcriptRevealed = false
+            showingStepsPeek = false
             store.playChime()
         }
         .onChange(of: store.experienceRevealed) {
@@ -114,7 +118,7 @@ private extension DisplayScreen {
 
     var stage: some View {
         ZStack {
-            if !store.experienceRevealed {
+            if !store.experienceRevealed || showingStepsPeek {
                 stepsStage
                     .transition(.move(edge: .leading).combined(with: .opacity))
             } else {
@@ -123,6 +127,15 @@ private extension DisplayScreen {
             }
         }
         .animation(.spring(response: 0.55, dampingFraction: 0.8), value: store.experienceRevealed)
+        .animation(.spring(response: 0.55, dampingFraction: 0.8), value: showingStepsPeek)
+        .gesture(
+            // once revealed, anyone can swipe to peek back at the steps and back again;
+            // the actual reveal itself stays host-only via the Continue/Next Experience buttons
+            DragGesture(minimumDistance: 20).onEnded { value in
+                guard store.experienceRevealed else { return }
+                showingStepsPeek = value.translation.width > 0
+            }
+        )
     }
 
     var stepsStage: some View {
@@ -208,9 +221,9 @@ private extension DisplayScreen {
     var pageIndicator: some View {
         HStack(spacing: 6) {
             Circle().frame(width: 7, height: 7)
-                .foregroundStyle(Color.white.opacity(0.4))
+                .foregroundStyle(showingStepsPeek ? Color.white : Color.white.opacity(0.4))
             Circle().frame(width: 7, height: 7)
-                .foregroundStyle(store.experienceRevealed ? Color.white : Color.white.opacity(0.4))
+                .foregroundStyle(store.experienceRevealed && !showingStepsPeek ? Color.white : Color.white.opacity(0.4))
         }
         .opacity(store.experienceRevealed ? 1 : 0)
     }
