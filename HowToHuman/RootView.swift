@@ -9,6 +9,9 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject var store: GameStore
+    // shared between VotingScreen and ResultScreen so the alien cluster morphs continuously across that switch
+    @Namespace private var alienNamespace
+
     var body: some View {
         Group {
             switch store.state {
@@ -37,9 +40,9 @@ struct RootView: View {
             case .shareExperience:
                 DisplayScreen()
             case .voting:
-                VotingScreen()
+                VotingScreen(alienNamespace: alienNamespace)
             case .result:
-                ResultScreen()
+                ResultScreen(alienNamespace: alienNamespace)
             }
         }
         .preferredColorScheme(.dark)

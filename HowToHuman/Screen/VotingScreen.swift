@@ -16,10 +16,14 @@ struct VotingScreen: View {
     // nil = haven't voted yet; votes stay changeable up until the timer runs out or everyone's voted
     @State private var myVote: Bool?
 
+    // shared with ResultScreen (via RootView) so the alien cluster morphs continuously across the screen switch instead of cutting
+    var alienNamespace: Namespace.ID?
+
     // preview-only: lets #Preview seed a fixed countdown / current-vote state that's otherwise only reachable by interacting live
     private let previewTimeRemaining: Int?
 
-    init(previewTimeRemaining: Int? = nil, previewMyVote: Bool? = nil) {
+    init(alienNamespace: Namespace.ID? = nil, previewTimeRemaining: Int? = nil, previewMyVote: Bool? = nil) {
+        self.alienNamespace = alienNamespace
         self.previewTimeRemaining = previewTimeRemaining
         _myVote = State(initialValue: previewMyVote)
     }
@@ -124,7 +128,7 @@ private extension VotingScreen {
             ZStack {
                 ForEach(store.currRoom?.players ?? [], id: \.id) { player in
                     if let position = positions[player.id] {
-                        AvatarLobbyView(player: player) {}
+                        avatarView(for: player)
                             .position(x: position.x, y: position.y)
                     }
                 }
@@ -137,6 +141,16 @@ private extension VotingScreen {
             }
         }
         .frame(height: 320)
+    }
+
+    @ViewBuilder
+    func avatarView(for player: Player) -> some View {
+        if let alienNamespace {
+            AvatarLobbyView(player: player) {}
+                .matchedGeometryEffect(id: player.id, in: alienNamespace)
+        } else {
+            AvatarLobbyView(player: player) {}
+        }
     }
 }
 

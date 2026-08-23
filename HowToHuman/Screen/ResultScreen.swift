@@ -11,13 +11,19 @@ struct ResultScreen: View {
     @EnvironmentObject var store: GameStore
 
     @State private var positions: [UUID: PlayerPosition] = [:]
+    // now only gates the opacity fade-out + "waiting" text reveal; cluster position/scale are unconditional
+    // on outcome so matchedGeometryEffect can morph continuously from VotingScreen's layout into this one
     @State private var descended: Bool
     @State private var showPlayAgainPrompt: Bool
 
-    // preview-only: seeding either skips the real descend/reveal animation timers, showing a stable end-state instead
+    // shared with VotingScreen (via RootView) so the alien cluster morphs continuously across the screen switch instead of cutting
+    var alienNamespace: Namespace.ID?
+
+    // preview-only: seeding either skips the real reveal-timer animation, showing a stable end-state instead
     private let skipIntroAnimation: Bool
 
-    init(previewDescended: Bool? = nil, previewShowPlayAgainPrompt: Bool? = nil) {
+    init(alienNamespace: Namespace.ID? = nil, previewDescended: Bool? = nil, previewShowPlayAgainPrompt: Bool? = nil) {
+        self.alienNamespace = alienNamespace
         _descended = State(initialValue: previewDescended ?? false)
         _showPlayAgainPrompt = State(initialValue: previewShowPlayAgainPrompt ?? false)
         skipIntroAnimation = previewDescended != nil || previewShowPlayAgainPrompt != nil
@@ -140,7 +146,7 @@ private extension ResultScreen {
             ZStack {
                 ForEach(store.currRoom?.players ?? [], id: \.id) { player in
                     if let position = positions[player.id] {
-                        AvatarLobbyView(player: player) {}
+                        avatarView(for: player)
                             .scaleEffect(clusterScale)
                             .position(x: position.x, y: position.y + clusterYOffset)
                             .opacity(clusterOpacity)
@@ -152,25 +158,36 @@ private extension ResultScreen {
             }
         }
         .frame(height: 280)
-        .animation(.easeInOut(duration: 2.5), value: descended)
+        // decoupled from RootView's ambient 0.35s screen-switch crossfade, so the geometry morph gets a slower,
+        // deliberate duration instead of a snappy blip
+        .animation(.easeInOut(duration: 2.5), value: store.state)
     }
 
-    // Yes: drift down and shrink onto Earth. No: drift up and shrink out into space. Tie: hold in place.
+    @ViewBuilder
+    func avatarView(for player: Player) -> some View {
+        if let alienNamespace {
+            AvatarLobbyView(player: player) {}
+                .matchedGeometryEffect(id: player.id, in: alienNamespace)
+        } else {
+            AvatarLobbyView(player: player) {}
+        }
+    }
+
+    // Yes: onto Earth. No: out into space. Tie: hold in place. Unconditional on outcome (not time-gated) so
+    // matchedGeometryEffect can morph continuously straight from VotingScreen's large centered layout into this one.
     var clusterYOffset: CGFloat {
-        guard descended else { return 0 }
         switch outcome {
-        case .visitAgain: return 140
-        case .wontVisit: return -160
-        case .tie: return 0
+        case .visitAgain: 140
+        case .wontVisit: -160
+        case .tie: 0
         }
     }
 
     var clusterScale: CGFloat {
-        guard descended else { return 1 }
         switch outcome {
-        case .visitAgain: return 0.5
-        case .wontVisit: return 0.3
-        case .tie: return 1
+        case .visitAgain: 0.5
+        case .wontVisit: 0.3
+        case .tie: 1
         }
     }
 
