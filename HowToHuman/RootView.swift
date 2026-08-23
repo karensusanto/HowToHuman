@@ -45,6 +45,9 @@ struct RootView: View {
         .preferredColorScheme(.dark)
         .animation(.easeInOut(duration: 0.35), value: store.state)
         .transition(.opacity)
+        .onAppear{
+            store.initChimeAudioPlayer()
+        }
     }
 }
 

@@ -9,84 +9,9 @@ import Combine
 import Foundation
 import SwiftUI
 import Network
+import AVFoundation
+import AudioToolbox
 
-enum AppState: Codable {
-    case home
-    case howToPlay
-    case lobbySearch
-    case customizeAlien
-    case lobby
-    case transitionToAskHuman
-    case transitionToGuideAliens
-    case transitionToNarrateExperience
-    case transitionToShareExperience
-    case transitionToVoting
-    case askHuman
-    case guideAlien
-    case narrateExperience
-    case shareExperience
-    case voting
-    case result
-    
-    static func transitions() -> [AppState] {
-        return [.transitionToVoting, .transitionToAskHuman, .transitionToGuideAliens, .transitionToNarrateExperience, .transitionToShareExperience]
-    }
-    
-    var next: AppState {
-        switch self{
-        case .lobby:
-                .transitionToAskHuman
-        case .transitionToAskHuman:
-                .askHuman
-        case .transitionToGuideAliens:
-                .guideAlien
-        case .transitionToNarrateExperience:
-                .narrateExperience
-        case .transitionToShareExperience:
-                .shareExperience
-        case .transitionToVoting:
-                .voting
-        case .askHuman:
-                .transitionToGuideAliens
-        case .guideAlien:
-                .transitionToNarrateExperience
-        case .narrateExperience:
-                .transitionToShareExperience
-        case .shareExperience:
-                .transitionToVoting
-        case .voting:
-                .result
-        default:
-            self
-        }
-    }
-}
-
-enum GamePhase: Codable {
-    case none
-    case askHuman
-    case answerAlien
-    case narrateExperience
-    case shareExperience
-    case voting
-    
-    var next: GamePhase {
-        switch self {
-        case .none:
-            return .askHuman
-        case .askHuman:
-            return .answerAlien
-        case .answerAlien:
-            return .narrateExperience
-        case .narrateExperience:
-            return .shareExperience
-        case .shareExperience:
-            return .voting
-        case .voting:
-            return .none
-        }
-    }
-}
 
 @MainActor
 final class GameStore: ObservableObject {
@@ -117,11 +42,14 @@ final class GameStore: ObservableObject {
     @Published var readyPlayers: Int = 0
     @Published var submittedQuestions: Int = 0
     
+    private var soundPlayer: AVAudioPlayer?
     private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
+    let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
     
     init(motionManager: MotionManager) {
         self.networkManager = NetworkManager()
         self.motionManager = motionManager
+        self.impactGenerator.prepare()
         
         myGameData = PlayerGameData(
             id: networkManager.myPeerId,
@@ -189,6 +117,26 @@ final class GameStore: ObservableObject {
                 self?.handleReadiness(readiness: readiness)
             }
         }
+    }
+    
+    func initAudioPlayer(sound: String) {
+        guard let url = Bundle.main.url(forResource: sound, withExtension: "mp3") else { return }
+        print("init audio player")
+        soundPlayer = try? AVAudioPlayer(contentsOf: url)
+        soundPlayer?.prepareToPlay()
+    }
+    func initChimeAudioPlayer() {
+        guard let url = Bundle.main.url(forResource: "chime", withExtension: "mp3") else { return }
+        print("init audio player")
+        soundPlayer = try? AVAudioPlayer(contentsOf: url)
+        soundPlayer?.prepareToPlay()
+    }
+    func playChime() {
+        soundPlayer?.currentTime = 0
+        soundPlayer?.play()
+    }
+    func vibrate(){
+        AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
     }
     
     func join(){

@@ -44,6 +44,24 @@ struct ExitRoomButton: View {
     }
 }
 
+struct ReadyButton: View {
+    @EnvironmentObject var store: GameStore
+    @Binding var readyMsgSubmitted: Bool
+    @Binding var isReady: Bool
+    
+    var body: some View {
+        PrimaryButton(title: "Ready", isDisabled: !isReady || readyMsgSubmitted) {
+            if readyMsgSubmitted {
+                store.sendReadyStatus(false)
+            }
+            else{
+                store.sendReadyStatus(true)
+            }
+            readyMsgSubmitted.toggle()
+        }
+    }
+}
+
 struct PrimaryButton: View {
     let title: String
     @State var size: CGFloat = 32

@@ -25,9 +25,7 @@ struct HumanInstructionScreen: View {
         steps.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }.count
     }
 
-    private var isReady: Bool {
-        filledStepsCount > 0
-    }
+    @State var isReady: Bool = false
 
     private var canAddStep: Bool {
         steps.count < maxSteps
@@ -101,10 +99,7 @@ struct HumanInstructionScreen: View {
                 if readyMsgSubmitted{
                     HTHText(title: "Waiting for other players...", size: HTHSize.caption, font: HTHFont.space_grot)
                 }
-                PrimaryButton(title: "Ready", isDisabled: !isReady || readyMsgSubmitted) {
-                    store.sendReadyStatus(true)
-                    readyMsgSubmitted = true
-                }
+                ReadyButton(readyMsgSubmitted: $readyMsgSubmitted, isReady: $isReady)
             }
             .padding()
             
@@ -119,6 +114,7 @@ struct HumanInstructionScreen: View {
             HTHGameBackground()
         }
         .onAppear{
+            store.playChime()
             timeRemaining = (store.currRoom?.timerMode.seconds(for: .steps)) ?? 0
         }
         .onDisappear{
@@ -131,6 +127,10 @@ struct HumanInstructionScreen: View {
                 
                 store.submitGameData(data: receivedGameData)
             }
+            store.vibrate()
+        }
+        .onChange(of: filledStepsCount){
+            isReady = filledStepsCount > 0
         }
         .onReceive(timer) { _ in
             guard timeRemaining > 0 else {

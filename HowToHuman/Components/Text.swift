@@ -12,6 +12,7 @@ struct HTHSize{
     static let extraLargeTitle : CGFloat = 32
     static let largeTitle : CGFloat = 25
     static let title : CGFloat = 24
+    static let smallTitle : CGFloat = 22
     static let smallerTitle : CGFloat = 20
     static let body : CGFloat = 16
     static let caption : CGFloat = 12
