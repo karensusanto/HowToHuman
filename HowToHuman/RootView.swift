@@ -37,9 +37,9 @@ struct RootView: View {
             case .shareExperience:
                 DisplayScreen()
             case .voting:
-                EmptyView()
+                VotingScreen()
             case .result:
-                EmptyView()
+                ResultScreen()
             }
         }
         .preferredColorScheme(.dark)
