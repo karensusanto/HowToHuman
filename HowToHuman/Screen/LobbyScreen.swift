@@ -61,6 +61,22 @@ func assignPositions(for players: [Player], into positions: inout [UUID: PlayerP
     positions = positions.filter { playerIDs.contains($0.key) }
 }
 
+// Deterministic (no randomness, so it never fails to place someone): arranges `count` slots into
+// centered rows of up to 4. Used by VotingScreen/ResultScreen so both compute the exact same layout
+// for the same player index - that's what gives the cluster continuity between the two screens.
+func clusterPosition(index: Int, count: Int, size: CGSize) -> PlayerPosition {
+    let maxPerRow = 4
+    let rows = max(1, Int(ceil(Double(count) / Double(maxPerRow))))
+    let row = index / maxPerRow
+    let itemsInRow = (row == rows - 1) ? count - row * maxPerRow : maxPerRow
+    let col = index % maxPerRow
+
+    let spacingX = size.width / CGFloat(itemsInRow + 1)
+    let spacingY = size.height / CGFloat(rows + 1)
+
+    return PlayerPosition(x: spacingX * CGFloat(col + 1), y: spacingY * CGFloat(row + 1))
+}
+
 struct playersView: View {
     @EnvironmentObject var store: GameStore
     @Binding var positions: [UUID: PlayerPosition]

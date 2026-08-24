@@ -11,19 +11,14 @@ import Combine
 struct VotingScreen: View {
     @EnvironmentObject var store: GameStore
 
-    @State private var positions: [UUID: PlayerPosition] = [:]
     @State private var timeRemaining: Int = 0
     // nil = haven't voted yet; votes stay changeable up until the timer runs out or everyone's voted
     @State private var myVote: Bool?
 
-    // shared with ResultScreen (via RootView) so the alien cluster morphs continuously across the screen switch instead of cutting
-    var alienNamespace: Namespace.ID?
-
     // preview-only: lets #Preview seed a fixed countdown / current-vote state that's otherwise only reachable by interacting live
     private let previewTimeRemaining: Int?
 
-    init(alienNamespace: Namespace.ID? = nil, previewTimeRemaining: Int? = nil, previewMyVote: Bool? = nil) {
-        self.alienNamespace = alienNamespace
+    init(previewTimeRemaining: Int? = nil, previewMyVote: Bool? = nil) {
         self.previewTimeRemaining = previewTimeRemaining
         _myVote = State(initialValue: previewMyVote)
     }
@@ -125,34 +120,18 @@ private extension VotingScreen {
 
     var alienCluster: some View {
         GeometryReader { geo in
+            let players = store.currRoom?.inGamePlayers ?? []
             ZStack {
-                ForEach(store.currRoom?.inGamePlayers ?? [], id: \.id) { player in
-                    if let position = positions[player.id] {
-                        avatarView(for: player)
-                            .position(x: position.x, y: position.y)
-                    }
+                ForEach(Array(players.enumerated()), id: \.element.id) { index, player in
+                    let position = clusterPosition(index: index, count: players.count, size: geo.size)
+                    // inGame here means "playing a different ongoing round" (LobbyScreen's grayed-out
+                    // treatment) - never true for players shown mid-round on this screen
+                    AvatarLobbyView(player: player, inGame: false) {}
+                        .position(x: position.x, y: position.y)
                 }
-            }
-            .onAppear {
-                assignPositions(for: store.currRoom?.inGamePlayers ?? [], into: &positions, size: geo.size, radius: 60)
-            }
-            .onChange(of: store.currRoom?.inGamePlayers.count) {
-                assignPositions(for: store.currRoom?.inGamePlayers ?? [], into: &positions, size: geo.size, radius: 60)
             }
         }
         .frame(height: 320)
-    }
-
-    @ViewBuilder
-    func avatarView(for player: Player) -> some View {
-        // inGame here means "playing a different ongoing round" (LobbyScreen's grayed-out treatment) -
-        // never true for players shown mid-round on this screen
-        if let alienNamespace {
-            AvatarLobbyView(player: player, inGame: false) {}
-                .matchedGeometryEffect(id: player.id, in: alienNamespace)
-        } else {
-            AvatarLobbyView(player: player, inGame: false) {}
-        }
     }
 }
 

@@ -10,44 +10,45 @@ import SwiftUI
 struct ResultScreen: View {
     @EnvironmentObject var store: GameStore
 
-    @State private var positions: [UUID: PlayerPosition] = [:]
-    // gates the opacity fade-out (wontVisit) and the tap-to-continue reveal; cluster position/scale are
-    // unconditional on outcome so matchedGeometryEffect can morph continuously from VotingScreen's layout
+    // gates the opacity fade-out (slime/leave) and the tap-to-continue reveal
     @State private var descended: Bool
     // debounce only - tapping sends the whole room back immediately, there's no one else to wait on
     @State private var hasTapped: Bool
-
-    // shared with VotingScreen (via RootView) so the alien cluster morphs continuously across the screen switch instead of cutting
-    var alienNamespace: Namespace.ID?
 
     // preview-only: seeding skips the real reveal-timer animation, showing a stable end-state instead
     private let skipIntroAnimation: Bool
 
     private let purpleGlow = Color(red: 0.70, green: 0.60, blue: 0.90)
 
-    init(alienNamespace: Namespace.ID? = nil, previewDescended: Bool? = nil, previewHasTapped: Bool? = nil) {
-        self.alienNamespace = alienNamespace
+    init(previewDescended: Bool? = nil, previewHasTapped: Bool? = nil) {
         _descended = State(initialValue: previewDescended ?? false)
         _hasTapped = State(initialValue: previewHasTapped ?? false)
         skipIntroAnimation = previewDescended != nil
     }
 
+    // TEMP: placeholder motion per tier until the real videos are wired in and these get replaced
+    // by hand-authored keyframes matching each video's choreography
     private enum Outcome {
-        case visitAgain, wontVisit, tie
+        case slime  // 0-33% yes: aliens hate Earth, cover it in slime
+        case leave  // 34-66% yes: aliens just leave
+        case visit  // 67-100% yes: aliens go down to Earth
     }
 
+    // percentage of yes votes, rounded up, bucketed into thirds
     private var outcome: Outcome {
-        guard let result = store.voteResult else { return .tie }
-        if result > 0.5 { return .visitAgain }
-        if result < 0.5 { return .wontVisit }
-        return .tie
+        let percentage = Int(((store.voteResult ?? 0.5) * 100).rounded(.up))
+        switch percentage {
+        case ...33: return .slime
+        case 34...66: return .leave
+        default: return .visit
+        }
     }
 
     private var headline: String {
         switch outcome {
-        case .visitAgain: "The Aliens decided that they would visit Earth again!"
-        case .wontVisit: "The Aliens decided that they won't visit Earth again."
-        case .tie: "The Aliens couldn't come to a decision..."
+        case .slime: "The Aliens hated Earth so much, they covered it in slime!"
+        case .leave: "The Aliens decided to just leave..."
+        case .visit: "The Aliens decided that they would visit Earth again!"
         }
     }
 
@@ -129,7 +130,7 @@ private extension ResultScreen {
                     .scaledToFit()
                     .frame(width: geo.size.width * 1.3)
                     .offset(y: 250)
-                    .opacity(outcome == .wontVisit ? 0.6 : 1)
+                    .opacity(outcome == .leave ? 0.6 : 1)
             }
             .frame(width: geo.size.width)
         }
@@ -138,58 +139,48 @@ private extension ResultScreen {
 
     var alienCluster: some View {
         GeometryReader { geo in
+            let players = store.currRoom?.inGamePlayers ?? []
             ZStack {
-                ForEach(store.currRoom?.inGamePlayers ?? [], id: \.id) { player in
-                    if let position = positions[player.id] {
-                        avatarView(for: player)
-                            .scaleEffect(clusterScale)
-                            .position(x: position.x, y: position.y + clusterYOffset)
-                            .opacity(clusterOpacity)
-                    }
+                ForEach(Array(players.enumerated()), id: \.element.id) { index, player in
+                    // same formula VotingScreen uses, so a player's starting position here lines up
+                    // exactly with where they were on the vote screen - see clusterPosition's doc comment
+                    let base = clusterPosition(index: index, count: players.count, size: geo.size)
+                    // inGame here means "playing a different ongoing round" (LobbyScreen's grayed-out
+                    // treatment) - never true for players shown mid-round on this screen
+                    AvatarLobbyView(player: player, inGame: false) {}
+                        .scaleEffect(clusterScale)
+                        .position(x: base.x, y: base.y + clusterYOffset)
+                        .opacity(clusterOpacity)
                 }
-            }
-            .onAppear {
-                assignPositions(for: store.currRoom?.inGamePlayers ?? [], into: &positions, size: geo.size, radius: 60)
             }
         }
         .frame(height: 280)
-        // decoupled from RootView's ambient 0.35s screen-switch crossfade, so the geometry morph gets a slower,
-        // deliberate duration instead of a snappy blip
-        .animation(.easeInOut(duration: 2.5), value: store.state)
+        .animation(.easeInOut(duration: 2.5), value: descended)
     }
 
-    @ViewBuilder
-    func avatarView(for player: Player) -> some View {
-        // inGame here means "playing a different ongoing round" (LobbyScreen's grayed-out treatment) -
-        // never true for players shown mid-round on this screen
-        if let alienNamespace {
-            AvatarLobbyView(player: player, inGame: false) {}
-                .matchedGeometryEffect(id: player.id, in: alienNamespace)
-        } else {
-            AvatarLobbyView(player: player, inGame: false) {}
-        }
-    }
-
-    // Yes: onto Earth. No: out into space. Tie: hold in place. Unconditional on outcome (not time-gated) so
-    // matchedGeometryEffect can morph continuously straight from VotingScreen's large centered layout into this one.
+    // TEMP placeholder motion - onto Earth (visit), out into space fading (leave), or down but
+    // holding tighter to Earth for now (slime). Real per-tier choreography lands once the actual
+    // videos are wired in and this becomes hand-authored keyframes matching each video's timing.
     var clusterYOffset: CGFloat {
+        guard descended else { return 0 }
         switch outcome {
-        case .visitAgain: 140
-        case .wontVisit: -160
-        case .tie: 0
+        case .visit: return 140
+        case .leave: return -160
+        case .slime: return 100
         }
     }
 
     var clusterScale: CGFloat {
+        guard descended else { return 1 }
         switch outcome {
-        case .visitAgain: 0.5
-        case .wontVisit: 0.3
-        case .tie: 1
+        case .visit: return 0.5
+        case .leave: return 0.3
+        case .slime: return 0.6
         }
     }
 
     var clusterOpacity: Double {
-        guard descended, outcome == .wontVisit else { return 1 }
+        guard descended, outcome == .leave else { return 1 }
         return 0.15
     }
 }
@@ -213,37 +204,51 @@ private func previewResultStore(voteResult: Float?) -> GameStore {
     return store
 }
 
-#Preview("Live · Watch It Animate (Yes)") {
-    let store = previewResultStore(voteResult: 1.0)
+#Preview("Live · Watch It Animate (Visit)") {
+    let store = previewResultStore(voteResult: 0.9)
     ResultScreen() // no preview overrides: runs the real onAppear animation, needs Xcode's Live Preview to actually play
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
 
-#Preview("Yes · Tap to Continue") {
-    let store = previewResultStore(voteResult: 1.0)
+#Preview("Visit (90%) · Tap to Continue") {
+    let store = previewResultStore(voteResult: 0.9)
     ResultScreen(previewDescended: true)
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
 
-#Preview("No · Tap to Continue") {
-    let store = previewResultStore(voteResult: 0.0)
-    ResultScreen(previewDescended: true)
-        .environmentObject(store)
-        .environmentObject(store.motionManager)
-}
-
-#Preview("Tie · Tap to Continue") {
+#Preview("Leave (50%) · Tap to Continue") {
     let store = previewResultStore(voteResult: 0.5)
     ResultScreen(previewDescended: true)
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
 
+#Preview("Slime (10%) · Tap to Continue") {
+    let store = previewResultStore(voteResult: 0.1)
+    ResultScreen(previewDescended: true)
+        .environmentObject(store)
+        .environmentObject(store.motionManager)
+}
+
 #Preview("Just Arrived · Pre-descend") {
-    let store = previewResultStore(voteResult: 1.0)
+    let store = previewResultStore(voteResult: 0.9)
     ResultScreen(previewDescended: false)
+        .environmentObject(store)
+        .environmentObject(store.motionManager)
+}
+
+#Preview("6 Players · All Slots Fill") {
+    let store = previewResultStore(voteResult: 0.9)
+    let names = ["Cho", "Karen", "Baeni", "Satria", "Wais", "Barra"]
+    let avatars = AlienAvatar.allCases
+    let players = (0..<6).map { index in
+        Player(id: UUID(), name: names[index], avatar: avatars[index % avatars.count])
+    }
+    store.currRoom?.joinedPlayers = players
+    store.currRoom?.inGamePlayers = players
+    return ResultScreen(previewDescended: true)
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
