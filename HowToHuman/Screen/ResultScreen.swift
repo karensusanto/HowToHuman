@@ -6,28 +6,31 @@
 //
 
 import SwiftUI
+import AVFoundation
 
 struct ResultScreen: View {
     @EnvironmentObject var store: GameStore
 
-    // gates the opacity fade-out (slime/leave) and the tap-to-continue reveal
-    @State private var descended: Bool
+    @State private var player: AVPlayer?
+    // gates the tap-to-continue reveal - true once the result video plays through to the end
+    @State private var videoFinished: Bool
     // debounce only - tapping sends the whole room back immediately, there's no one else to wait on
     @State private var hasTapped: Bool
 
-    // preview-only: seeding skips the real reveal-timer animation, showing a stable end-state instead
+    // preview-only: skips starting real video playback/observers, showing a stable end-state instead
     private let skipIntroAnimation: Bool
 
     private let purpleGlow = Color(red: 0.70, green: 0.60, blue: 0.90)
 
-    init(previewDescended: Bool? = nil, previewHasTapped: Bool? = nil) {
-        _descended = State(initialValue: previewDescended ?? false)
+    init(previewVideoFinished: Bool? = nil, previewHasTapped: Bool? = nil) {
+        _videoFinished = State(initialValue: previewVideoFinished ?? false)
         _hasTapped = State(initialValue: previewHasTapped ?? false)
-        skipIntroAnimation = previewDescended != nil
+        skipIntroAnimation = previewVideoFinished != nil
     }
 
-    // TEMP: placeholder motion per tier until the real videos are wired in and these get replaced
-    // by hand-authored keyframes matching each video's choreography
+    // TEMP: flight paths below are a first-pass placeholder tuned by eye against exported video
+    // frames, not measured live against the running video - expect to nudge the destination
+    // offsets once this is actually seen playing on device.
     private enum Outcome {
         case slime  // 0-33% yes: aliens hate Earth, cover it in slime
         case leave  // 34-66% yes: aliens just leave
@@ -44,6 +47,14 @@ struct ResultScreen: View {
         }
     }
 
+    private var videoResourceName: String {
+        switch outcome {
+        case .slime: "result-slime"
+        case .leave: "result-leave"
+        case .visit: "result-visit"
+        }
+    }
+
     private var headline: String {
         switch outcome {
         case .slime: "The Aliens hated Earth so much, they covered it in slime!"
@@ -52,17 +63,31 @@ struct ResultScreen: View {
         }
     }
 
+    // where each UFO ends up relative to its VotingScreen starting position, and how it looks once there
+    private var flightDestination: (dx: CGFloat, dy: CGFloat, scale: CGFloat, opacity: Double) {
+        switch outcome {
+        case .visit: (0, 160, 0.45, 0.95)  // converge down toward Earth, stay mostly visible
+        case .leave: (0, -420, 0.3, 0.1)   // shoot up off-screen, fade almost away
+        case .slime: (0, 120, 0.5, 0.2)    // dip toward Earth to slime it, then fade - they don't stick around
+        }
+    }
+
     var body: some View {
         ZStack {
-            Color.clear.ignoresSafeArea()
+            if let player {
+                VideoBackground(player: player)
+                    .ignoresSafeArea()
+            } else {
+                Color.black.ignoresSafeArea()
+            }
+
+            Color.clear
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    guard descended, !hasTapped, !store.showExitRoomPopUp else { return }
+                    guard videoFinished, !hasTapped, !store.showExitRoomPopUp else { return }
                     store.requestReturnToLobby()
                     hasTapped = true
                 }
-
-            earthGraphic
 
             VStack(spacing: 20) {
                 HStack {
@@ -80,7 +105,7 @@ struct ResultScreen: View {
 
                 Spacer()
 
-                if descended {
+                if videoFinished {
                     HTHText(
                         title: "Tap anywhere to go back to the lobby",
                         size: HTHSize.caption,
@@ -107,34 +132,30 @@ struct ResultScreen: View {
             }.padding()
         }
         .frame(maxWidth: .infinity)
-        .background {
-            HTHGameBackground()
-        }
         .onAppear {
             store.playChime()
             guard !skipIntroAnimation else { return }
-            withAnimation(.easeInOut(duration: 2.5)) {
-                descended = true
-            }
+            startVideo()
+        }
+        .onDisappear {
+            player?.pause()
         }
     }
 }
 
 private extension ResultScreen {
-    var earthGraphic: some View {
-        GeometryReader { geo in
-            VStack {
-                Spacer()
-                Image("earth")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: geo.size.width * 1.3)
-                    .offset(y: 250)
-                    .opacity(outcome == .leave ? 0.6 : 1)
-            }
-            .frame(width: geo.size.width)
+    func startVideo() {
+        guard let url = Bundle.main.url(forResource: videoResourceName, withExtension: "mov") else { return }
+        let newPlayer = AVPlayer(url: url)
+        player = newPlayer
+        newPlayer.play()
+        NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: newPlayer.currentItem,
+            queue: .main
+        ) { _ in
+            withAnimation { videoFinished = true }
         }
-        .ignoresSafeArea(edges: .bottom)
     }
 
     var alienCluster: some View {
@@ -143,46 +164,65 @@ private extension ResultScreen {
             ZStack {
                 ForEach(Array(players.enumerated()), id: \.element.id) { index, player in
                     // same formula VotingScreen uses, so a player's starting position here lines up
-                    // exactly with where they were on the vote screen - see clusterPosition's doc comment
+                    // exactly with where they were on the vote screen
                     let base = clusterPosition(index: index, count: players.count, size: geo.size)
-                    // inGame here means "playing a different ongoing round" (LobbyScreen's grayed-out
-                    // treatment) - never true for players shown mid-round on this screen
-                    AvatarLobbyView(player: player, inGame: false) {}
-                        .scaleEffect(clusterScale)
-                        .position(x: base.x, y: base.y + clusterYOffset)
-                        .opacity(clusterOpacity)
+                    flyingAvatar(for: player, index: index)
+                        .position(x: base.x, y: base.y)
                 }
             }
         }
         .frame(height: 280)
-        .animation(.easeInOut(duration: 2.5), value: descended)
     }
 
-    // TEMP placeholder motion - onto Earth (visit), out into space fading (leave), or down but
-    // holding tighter to Earth for now (slime). Real per-tier choreography lands once the actual
-    // videos are wired in and this becomes hand-authored keyframes matching each video's timing.
-    var clusterYOffset: CGFloat {
-        guard descended else { return 0 }
-        switch outcome {
-        case .visit: return 140
-        case .leave: return -160
-        case .slime: return 100
+    // A loop-de-loop flourish (so the path reads as alive, not a straight slide) followed by a
+    // swoop to flightDestination, with scale/opacity easing in over the same span. Each index gets
+    // a staggered start and alternating loop direction so the cluster doesn't move in lockstep.
+    @ViewBuilder
+    func flyingAvatar(for player: Player, index: Int) -> some View {
+        let loopSign: CGFloat = index.isMultiple(of: 2) ? 1 : -1
+        let loopRadius: CGFloat = 36
+        let stagger = Double(index) * 0.15
+        let dest = flightDestination
+
+        KeyframeAnimator(initialValue: UFOFlight(), trigger: 0) { value in
+            AvatarLobbyView(player: player, inGame: false) {}
+                .offset(x: value.offsetX, y: value.offsetY)
+                .scaleEffect(value.scale)
+                .opacity(value.opacity)
+        } keyframes: { _ in
+            KeyframeTrack(\.offsetX) {
+                LinearKeyframe(0, duration: stagger)
+                LinearKeyframe(loopRadius * loopSign, duration: 0.35)
+                LinearKeyframe(0, duration: 0.35)
+                LinearKeyframe(-loopRadius * loopSign, duration: 0.35)
+                LinearKeyframe(0, duration: 0.35)
+                CubicKeyframe(dest.dx, duration: 1.4)
+            }
+            KeyframeTrack(\.offsetY) {
+                LinearKeyframe(0, duration: stagger)
+                LinearKeyframe(-loopRadius, duration: 0.35)
+                LinearKeyframe(-loopRadius * 2, duration: 0.35)
+                LinearKeyframe(-loopRadius, duration: 0.35)
+                LinearKeyframe(0, duration: 0.35)
+                CubicKeyframe(dest.dy, duration: 1.4)
+            }
+            KeyframeTrack(\.scale) {
+                LinearKeyframe(1, duration: stagger + 1.4)
+                CubicKeyframe(dest.scale, duration: 1.2)
+            }
+            KeyframeTrack(\.opacity) {
+                LinearKeyframe(1, duration: stagger + 1.8)
+                CubicKeyframe(dest.opacity, duration: 0.8)
+            }
         }
     }
+}
 
-    var clusterScale: CGFloat {
-        guard descended else { return 1 }
-        switch outcome {
-        case .visit: return 0.5
-        case .leave: return 0.3
-        case .slime: return 0.6
-        }
-    }
-
-    var clusterOpacity: Double {
-        guard descended, outcome == .leave else { return 1 }
-        return 0.15
-    }
+private struct UFOFlight: Equatable {
+    var offsetX: CGFloat = 0
+    var offsetY: CGFloat = 0
+    var scale: CGFloat = 1
+    var opacity: Double = 1
 }
 
 // MARK: - Previews
@@ -204,37 +244,30 @@ private func previewResultStore(voteResult: Float?) -> GameStore {
     return store
 }
 
-#Preview("Live · Watch It Animate (Visit)") {
-    let store = previewResultStore(voteResult: 0.9)
-    ResultScreen() // no preview overrides: runs the real onAppear animation, needs Xcode's Live Preview to actually play
-        .environmentObject(store)
-        .environmentObject(store.motionManager)
-}
-
 #Preview("Visit (90%) · Tap to Continue") {
     let store = previewResultStore(voteResult: 0.9)
-    ResultScreen(previewDescended: true)
+    ResultScreen(previewVideoFinished: true)
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
 
 #Preview("Leave (50%) · Tap to Continue") {
     let store = previewResultStore(voteResult: 0.5)
-    ResultScreen(previewDescended: true)
+    ResultScreen(previewVideoFinished: true)
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
 
 #Preview("Slime (10%) · Tap to Continue") {
     let store = previewResultStore(voteResult: 0.1)
-    ResultScreen(previewDescended: true)
+    ResultScreen(previewVideoFinished: true)
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
 
-#Preview("Just Arrived · Pre-descend") {
+#Preview("Just Arrived · Video Playing") {
     let store = previewResultStore(voteResult: 0.9)
-    ResultScreen(previewDescended: false)
+    ResultScreen(previewVideoFinished: false)
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
@@ -248,7 +281,7 @@ private func previewResultStore(voteResult: Float?) -> GameStore {
     }
     store.currRoom?.joinedPlayers = players
     store.currRoom?.inGamePlayers = players
-    return ResultScreen(previewDescended: true)
+    return ResultScreen(previewVideoFinished: true)
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
