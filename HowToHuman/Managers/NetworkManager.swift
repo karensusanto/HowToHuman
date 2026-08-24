@@ -28,6 +28,7 @@ class NetworkManager: ObservableObject{
     var onReceiveReaction: ((Bubble, NWConnection) -> Void)?
     var onReceiveReady: ((String) -> Void)?
     var onReceiveVote: ((PlayerGameData) -> Void)?
+    var onReceiveReturnToLobby: (() -> Void)?
     
     func startAdvertising(room : Room) {
         do {
@@ -223,6 +224,9 @@ class NetworkManager: ObservableObject{
                         )
 
                         self.onReceiveVote?(voteData)
+                    case .returnToLobby:
+                        print("Received return-to-lobby request")
+                        self.onReceiveReturnToLobby?()
                     }
                     
                     
@@ -251,6 +255,8 @@ class NetworkManager: ObservableObject{
                         print("Failed to decode ready status.")
                     case .vote:
                         print("Failed to decode vote.")
+                    case .returnToLobby:
+                        print("Failed to decode return-to-lobby request.")
                     }
                     
                 }

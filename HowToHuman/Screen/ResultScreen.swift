@@ -11,10 +11,11 @@ struct ResultScreen: View {
     @EnvironmentObject var store: GameStore
 
     @State private var positions: [UUID: PlayerPosition] = [:]
-    // gates the opacity fade-out (wontVisit) and the ready-button/footer reveal; cluster position/scale are
+    // gates the opacity fade-out (wontVisit) and the tap-to-continue reveal; cluster position/scale are
     // unconditional on outcome so matchedGeometryEffect can morph continuously from VotingScreen's layout
     @State private var descended: Bool
-    @State private var readyMsgSubmitted: Bool
+    // debounce only - tapping sends the whole room back immediately, there's no one else to wait on
+    @State private var hasTapped: Bool
 
     // shared with VotingScreen (via RootView) so the alien cluster morphs continuously across the screen switch instead of cutting
     var alienNamespace: Namespace.ID?
@@ -24,10 +25,10 @@ struct ResultScreen: View {
 
     private let purpleGlow = Color(red: 0.70, green: 0.60, blue: 0.90)
 
-    init(alienNamespace: Namespace.ID? = nil, previewDescended: Bool? = nil, previewReadyMsgSubmitted: Bool? = nil) {
+    init(alienNamespace: Namespace.ID? = nil, previewDescended: Bool? = nil, previewHasTapped: Bool? = nil) {
         self.alienNamespace = alienNamespace
         _descended = State(initialValue: previewDescended ?? false)
-        _readyMsgSubmitted = State(initialValue: previewReadyMsgSubmitted ?? false)
+        _hasTapped = State(initialValue: previewHasTapped ?? false)
         skipIntroAnimation = previewDescended != nil
     }
 
@@ -55,9 +56,9 @@ struct ResultScreen: View {
             Color.clear.ignoresSafeArea()
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    guard descended, !readyMsgSubmitted, !store.showExitRoomPopUp else { return }
-                    store.sendReadyStatus(true)
-                    readyMsgSubmitted = true
+                    guard descended, !hasTapped, !store.showExitRoomPopUp else { return }
+                    store.requestReturnToLobby()
+                    hasTapped = true
                 }
 
             earthGraphic
@@ -80,7 +81,7 @@ struct ResultScreen: View {
 
                 if descended {
                     HTHText(
-                        title: readyMsgSubmitted ? "Waiting for other players..." : "Tap anywhere to go back to the lobby",
+                        title: "Tap anywhere to go back to the lobby",
                         size: HTHSize.caption,
                         font: HTHFont.space_grot
                     )
@@ -233,13 +234,6 @@ private func previewResultStore(voteResult: Float?) -> GameStore {
 #Preview("Tie · Tap to Continue") {
     let store = previewResultStore(voteResult: 0.5)
     ResultScreen(previewDescended: true)
-        .environmentObject(store)
-        .environmentObject(store.motionManager)
-}
-
-#Preview("Tapped · Waiting on Others") {
-    let store = previewResultStore(voteResult: 1.0)
-    ResultScreen(previewDescended: true, previewReadyMsgSubmitted: true)
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }

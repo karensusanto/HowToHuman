@@ -126,6 +126,12 @@ final class GameStore: ObservableObject {
                 self?.handleVote(voteData)
             }
         }
+
+        networkManager.onReceiveReturnToLobby = { [weak self] in
+            Task { @MainActor in
+                self?.next()
+            }
+        }
     }
     
     func initAudioPlayer(sound: String) {
@@ -680,6 +686,22 @@ final class GameStore: ObservableObject {
                 let encoded = try JSONEncoder().encode(data)
                 let envelopedData = try JSONEncoder().encode(MessageEnvelope(type: .vote, data: encoded))
                 networkManager.send(data: envelopedData, over: connectionToHost!, errMsg: "Send vote failed")
+            }catch {
+                print("Encoding failed: ", error)
+            }
+        }
+    }
+
+    // any single player - host or participant, no consensus needed - sends the whole room back to the lobby
+    func requestReturnToLobby(){
+        if connectionToHost == nil{
+            next()
+        }
+        else{
+            do{
+                let data = "ReturnToLobby".data(using: .utf8)!
+                let envelopedData = try JSONEncoder().encode(MessageEnvelope(type: .returnToLobby, data: data))
+                networkManager.send(data: envelopedData, over: connectionToHost!, errMsg: "Send return-to-lobby request failed")
             }catch {
                 print("Encoding failed: ", error)
             }
