@@ -24,6 +24,7 @@ struct PopUpBuilder: View {
             VStack(spacing: 10){
                 HTHText(title: title, font: HTHFont.space_grot)
                 HTHText(title: subtitle, size: HTHSize.caption, font: HTHFont.space_grot)
+                    .multilineTextAlignment(.center)
             }
 
             HStack{
@@ -46,12 +47,12 @@ struct PopUpBuilder: View {
     }
 }
 
-#Preview {
-    @Previewable @State var isPresented: Bool = true
-    PopUpBuilder(isPresented: $isPresented, title: "Title", subtitle: "subtitle", leftBtnText: "No", rightBtnText: "Yes", leftBtnColor: .white.opacity(0.3), rightBtnColor: HTHColor.green){
-        
-    }
-}
+//#Preview {
+//    @Previewable @State var isPresented: Bool = true
+//    PopUpBuilder(isPresented: $isPresented, title: "Title", subtitle: "subtitle", leftBtnText: "No", rightBtnText: "Yes", leftBtnColor: .white.opacity(0.3), rightBtnColor: HTHColor.green){
+//        
+//    }
+//}
 
 struct ExitRoomPopUp: View {
     @EnvironmentObject var store: GameStore
@@ -63,7 +64,7 @@ struct ExitRoomPopUp: View {
         PopUpBuilder(isPresented: $isPresented, title: "Exit \(roomName)?", subtitle: subTitle, leftBtnText: "No", rightBtnText: "Yes", leftBtnColor: HTHColor.green, rightBtnColor: .white.opacity(0.3)){
                 
                 //host is the only one in the room and want to leave the room (game hasn't started)
-                if store.currRoom?.players.count == 1{
+                if store.currRoom?.joinedPlayers.count == 1{
                     store.clearGame()
                     store.networkManager.stop()
                 }
@@ -85,8 +86,8 @@ struct ExitRoomPopUp: View {
                 roomName = store.currRoom?.roomName ?? "Room"
                 let hostID = store.currRoom?.hostID.uuidString
                 let playerID = store.networkManager.myPeerId.uuidString
-                
-                if store.currRoom?.players.count == 2 {
+                let inGamePlayerIDs = Set(store.currRoom!.inGamePlayers.map(\.id))
+                if inGamePlayerIDs.contains(store.myPlayerData.id) && store.currRoom?.inGamePlayers.count == 2 { // a player in the game wants to leave, leaving one player left in the game
                     
                     if hostID == playerID {
                         subTitle = "Leaving will end the game — only 1 player would remain, and your hostship will be transferred to the next player"
@@ -95,7 +96,7 @@ struct ExitRoomPopUp: View {
                         subTitle = "Leaving will end the game - only 1 player would remain."
                     }
                 }
-                else if store.currRoom?.players.count == 1 {
+                else if store.currRoom?.joinedPlayers.count == 1 {
                     subTitle = "The room will be deleted"
                 }
                 else if hostID == playerID {
@@ -161,22 +162,36 @@ struct TimerCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20){
             let title = timerMode.label
-            HTHText(title: title != "NORMAL" ? title :  title + "(Default)", color: isSelected ? selectedTextColor : unselectedTextColor)
+            HStack(){
+                if !isSelected{Spacer()}
+                HTHText(title: title, color: isSelected ? selectedTextColor : unselectedTextColor)
+                Spacer()
+                if isSelected{
+                    HTHText(title: "± \(timerMode.estimatedDuration() ?? "0") mins", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                }
+            }
             HStack(alignment: .center, spacing: 10){
-                VStack(alignment: .leading, spacing: 10){
-                    HTHText(title: "Phase 1 - Ask", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
-                    HTHText(title: "Phase 2 - Guide", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
-                    HTHText(title: "Phase 3 - Follow", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                if isSelected{
+                    VStack(alignment: .leading, spacing: 10){
+                        HTHText(title: "Phase 1 - Ask", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                        HTHText(title: "Phase 2 - Guide", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                        HTHText(title: "Phase 3 - Follow", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                    }
+                    VStack(alignment: .leading, spacing: 10){
+                        HTHText(title: ":", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                        HTHText(title: ":", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                        HTHText(title: ":", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                    }
+                    VStack(alignment: .leading, spacing: 10){
+                        HTHText(title: "\(timerMode.seconds(for: .question) ?? 0) Seconds", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                        HTHText(title: "\(timerMode.seconds(for: .steps) ?? 0) Seconds", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                        HTHText(title: "\(timerMode.seconds(for: .experience) ?? 0) Seconds", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                    }
                 }
-                VStack(alignment: .leading, spacing: 10){
-                    HTHText(title: ":", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
-                    HTHText(title: ":", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
-                    HTHText(title: ":", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
-                }
-                VStack(alignment: .leading, spacing: 10){
-                    HTHText(title: "\(timerMode.seconds(for: .question) ?? 0) Seconds", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
-                    HTHText(title: "\(timerMode.seconds(for: .steps) ?? 0) Seconds", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
-                    HTHText(title: "\(timerMode.seconds(for: .experience) ?? 0) Seconds", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                else{
+                    Spacer()
+                    HTHText(title: "± \(timerMode.estimatedDuration() ?? "0") mins", font: HTHFont.space_grot, weight: .medium, color: isSelected ? selectedTextColor : unselectedTextColor)
+                    Spacer()
                 }
             }
         }
@@ -199,8 +214,11 @@ struct TimerCard: View {
             isSelected = selectedTimerMode.label == timerMode.label
         }
         .onChange(of: selectedTimerMode){
-            isSelected = selectedTimerMode.label == timerMode.label
+            withAnimation(.easeInOut(duration: 0.3)) {
+                isSelected = selectedTimerMode.label == timerMode.label
+            }
         }
+        .animation(.easeInOut(duration: 0.3), value: isSelected)
         
     }
 }
@@ -208,7 +226,6 @@ struct TimerCard: View {
 struct TimerSettingPopUp: View {
     @EnvironmentObject var store: GameStore
     @Binding var isPresented: Bool
-    @State var value: Float
     @State var selectedTimerMode: TimerMode = .normal
     
     
@@ -217,7 +234,7 @@ struct TimerSettingPopUp: View {
             Color.clear.ignoresSafeArea()
             VStack(spacing: 40){
                 HTHText(title: "Timer Settings", size: HTHSize.title, color: HTHColor.yellow)
-                
+                Spacer()
                 VStack(spacing: 20){
                     ForEach(TimerMode.allCases, id: \.id){mode in
                         Button{
@@ -227,10 +244,13 @@ struct TimerSettingPopUp: View {
                         }
                         .scaleEffect(selectedTimerMode == mode ? 1 : 0.9)
                     }
-                }
+                    Spacer()
+                    HTHText(title:"The more players you have, the longer the game could go on.", font: HTHFont.space_grot, weight: .medium)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer()
+                }.padding(.horizontal, 40)
                 
-                Spacer()
-                Color.clear
                 PrimaryButton(title: "DONE", btnHeight: 72){
                     store.currRoom?.timerMode = selectedTimerMode
                     isPresented = false
@@ -238,11 +258,18 @@ struct TimerSettingPopUp: View {
             }
             .padding()
         }
-        .background(HTHOnboardingBackground())
+        .background(HTHGameBackground())
     }
 }
 
-//#Preview {
-//    @Previewable @State var isPresented: Bool = true
-//    RoomSettingPopUp(isPresented:$isPresented, value: 0).environmentObject(GameStore()).preferredColorScheme(.dark)
-//}
+#Preview {
+    @Previewable @State var isPresented: Bool = true
+    let motionManager = MotionManager()
+    let store = GameStore(
+        motionManager: motionManager
+    )
+    TimerSettingPopUp(isPresented:$isPresented)
+    .environmentObject(store)
+    .environmentObject(motionManager)
+    
+}

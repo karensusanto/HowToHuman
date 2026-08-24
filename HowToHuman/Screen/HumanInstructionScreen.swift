@@ -35,7 +35,7 @@ struct HumanInstructionScreen: View {
 
     @State private var assignmentList: [UUID: UUID] = [:]
     @State private var listHeight: CGFloat = 0
-
+    private let human = HumanAvatar.allCases.randomElement() ?? "human-girl"
     
     var body: some View {
         ZStack {
@@ -51,8 +51,7 @@ struct HumanInstructionScreen: View {
 
                 questionPill
                 
-                //Baeni need Human Image TT.TT
-                Image("human")
+                Image(human)
                     .resizable()
                     .scaledToFit()
                     .frame(width: 130)

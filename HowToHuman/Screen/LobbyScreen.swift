@@ -70,10 +70,11 @@ struct playersView: View {
     var body: some View {
         GeometryReader{geo in
             ZStack{
-                let players: [Player] = store.currRoom?.players ?? []
-                ForEach(players, id: \.id){player in
+                let joinedPlayers: [Player] = store.currRoom?.joinedPlayers ?? []
+                let inGamePlayerIDs = store.currRoom?.inGamePlayers.map(\.id) ?? []
+                ForEach(joinedPlayers, id: \.id){player in
                     if let position = positions[player.id] {
-                        AvatarLobbyView(player: player){
+                        AvatarLobbyView(player: player, inGame: inGamePlayerIDs.contains(player.id)){
                             showPopUp = true
                             selectedPlayer = player
                         }
@@ -83,13 +84,13 @@ struct playersView: View {
             }
             .onAppear{
                 updatePositions(
-                    players: store.currRoom?.players ?? [],
+                    players: store.currRoom?.joinedPlayers ?? [],
                     size: geo.size
                 )
             }
-            .onChange(of: store.currRoom?.players.count) {
+            .onChange(of: store.currRoom?.joinedPlayers.count) {
                     updatePositions(
-                        players: store.currRoom?.players ?? [],
+                        players: store.currRoom?.joinedPlayers ?? [],
                         size: geo.size
                     )
                 }
@@ -142,7 +143,7 @@ struct LobbyScreen: View {
                     Spacer()
                     VStack{
                         HTHText(title: store.currRoom?.roomName ?? "Lobby", size: HTHSize.title, color: HTHColor.yellow)
-                        HTHText(title: "(\(store.currRoom?.players.count ?? 0) / \(store.currRoom?.maxPlayers ?? 8) Players)", font: HTHFont.space_grot, weight: .bold, color: HTHColor.yellow)
+                        HTHText(title: "(\(store.currRoom?.joinedPlayers.count ?? 0) / \(store.currRoom?.maxPlayers ?? 8) Players)", font: HTHFont.space_grot, weight: .bold, color: HTHColor.yellow)
                     }
                     Spacer()
                     Color.clear.frame(width: 40, height: 40)
@@ -157,15 +158,17 @@ struct LobbyScreen: View {
                             store.showSettingPopUp = true
                         }
                         
-                        PrimaryButton(title: "START", btnHeight: 72, isDisabled: store.currRoom!.players.count < 2){
+                        PrimaryButton(title: "START", btnHeight: 72, isDisabled: store.currRoom!.joinedPlayers.count < 2){
                             store.next()
                         }
                     }
                 }
                 else{
-                    HStack{
-                        ProgressView()
-                        HTHText(title: "Wait for host to start the game...", size: HTHSize.caption, font: HTHFont.space_grot)
+                    if !(store.currRoom?.isPlaying ?? true){
+                        HTHText(title: "Wait for host to start the game", size: HTHSize.caption, font: HTHFont.space_grot)
+                    }
+                    else{
+                        HTHText(title: "Wait for ongoing game to finish", size: HTHSize.caption, font: HTHFont.space_grot)
                     }
                 }
                 
@@ -174,22 +177,12 @@ struct LobbyScreen: View {
             .padding()
             
             
-            
-            
-            let currTimeModeIdx = switch store.currRoom?.timerMode{
-            case .fast: 0
-            case .normal: 1
-            case .slow: 2
-            default:
-                1
-            }
-            
             VStack{
                 if store.showExitRoomPopUp{
                     ExitRoomPopUp(isPresented: $store.showExitRoomPopUp)
                 }
                 if store.showSettingPopUp{
-                    TimerSettingPopUp(isPresented: $store.showSettingPopUp, value: Float(currTimeModeIdx))
+                    TimerSettingPopUp(isPresented: $store.showSettingPopUp)
                 }
                 if store.showKickPlayerPopUp{
                     KickPlayerPopUp(isPresented: $store.showKickPlayerPopUp, player: selectedPlayer)
@@ -198,7 +191,7 @@ struct LobbyScreen: View {
         }
         .frame(maxWidth: .infinity)
         .background {
-            HTHOnboardingBackground()
+            HTHGameBackground()
         }
     }
     

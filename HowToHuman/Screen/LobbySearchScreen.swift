@@ -75,6 +75,8 @@ struct OrbitView: View {
                                 ).frame(width: 100).multilineTextAlignment(.center)
                             }
                         }
+                        .grayscale(room.playerCount >= room.maxPlayers ? 0.9 : 0)
+                        .disabled(room.playerCount >= room.maxPlayers)
                         .position(
                             x: diameter / 2 + x + padding,
                             y: geo.size.height / 2 + y
@@ -137,7 +139,7 @@ struct LobbySearchScreen: View {
         }
         .frame(maxWidth: .infinity)
         .background {
-            HTHOnboardingBackground()
+            HTHGameBackground()
         }
     }
 }

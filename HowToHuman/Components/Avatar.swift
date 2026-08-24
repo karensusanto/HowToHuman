@@ -15,6 +15,15 @@ class AlienAvatar{
         "spaceship-cyan",
         "spaceship-pink",
         "spaceship-purple",
+        "spaceship-red",
+        "spaceship-gray"
+    ]
+}
+
+class HumanAvatar{
+    static var allCases: [String] = [
+        "human-girl",
+        "human-boy",
     ]
 }
 
@@ -52,29 +61,11 @@ struct Avatar: View {
     }
 }
 
-struct AvatarGridView: View {
-    @Binding var selectedAvatar: String
-    @State var listOfAvatars: [String] = AlienAvatar.allCases
-    let columns = [
-        GridItem(.adaptive(minimum: 70))
-    ]
-    
-    var body: some View {
-        LazyVGrid(columns: columns, spacing: 20) {
-            ForEach(listOfAvatars, id: \.self){avatar in
-                Button{selectedAvatar = avatar}
-                label:{
-                    Avatar(avatar: avatar, selected: selectedAvatar == avatar)
-                }
-            }
-        }
-    }
-}
-
 struct AvatarLobbyView: View {
     let player: Player
     @EnvironmentObject var store: GameStore
     @State private var floating: Bool = false
+    let inGame: Bool
     var action: () -> Void
     
     var playerDisplay: some View{
@@ -90,14 +81,17 @@ struct AvatarLobbyView: View {
             
             Image(player.avatar).resizable().scaledToFit().frame(width:100)
             
-            
+            if inGame{
+                HTHText(title: "playing", size: HTHSize.caption, font: HTHFont.space_grot, color: color)
+            }
         }
-        .offset(y: floating ? 3.0 : -3.0)
+        .offset(y: floating ? 5.0 : -5.0)
         .onAppear {
             withAnimation(.easeInOut(duration: Double.random(in: 1.8...2.6)).repeatForever(autoreverses: true)) {
                 floating = true
             }
         }
+        .grayscale(inGame ? 0.9 : 0)
     }
     
     var body: some View {

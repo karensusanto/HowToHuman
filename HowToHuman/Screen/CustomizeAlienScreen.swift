@@ -146,7 +146,7 @@ struct CustomizeAlienScreen: View {
                     if store.joiningRoom == nil {
                         store.myPlayerData.name = playerName
                         store.myPlayerData.avatar = selectedAvatar!
-                        let room = Room(name: "\(store.myPlayerData.name)'s Satellite", hostID: store.myPlayerData.id, players: [store.myPlayerData])
+                        let room = Room(name: "\(store.myPlayerData.name)'s Satellite", hostID: store.myPlayerData.id, joinedPlayers: [store.myPlayerData])
                         store.playerGameDataList.append(store.myGameData)
                         
                         store.networkManager.startAdvertising(room: room)
@@ -166,7 +166,7 @@ struct CustomizeAlienScreen: View {
         }
         .frame(maxWidth: .infinity)
         .background {
-            HTHOnboardingBackground()
+            HTHGameBackground()
         }
     }
 }
