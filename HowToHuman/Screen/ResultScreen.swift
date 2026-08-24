@@ -11,22 +11,25 @@ struct ResultScreen: View {
     @EnvironmentObject var store: GameStore
 
     @State private var positions: [UUID: PlayerPosition] = [:]
-    // now only gates the opacity fade-out + "waiting" text reveal; cluster position/scale are unconditional
-    // on outcome so matchedGeometryEffect can morph continuously from VotingScreen's layout into this one
+    // gates the opacity fade-out (wontVisit) and the tap-to-continue reveal; cluster position/scale are
+    // unconditional on outcome so matchedGeometryEffect can morph continuously from VotingScreen's layout
     @State private var descended: Bool
-    @State private var showPlayAgainPrompt: Bool
+    // debounce only - tapping sends the whole room back immediately, there's no one else to wait on
+    @State private var hasTapped: Bool
 
     // shared with VotingScreen (via RootView) so the alien cluster morphs continuously across the screen switch instead of cutting
     var alienNamespace: Namespace.ID?
 
-    // preview-only: seeding either skips the real reveal-timer animation, showing a stable end-state instead
+    // preview-only: seeding skips the real reveal-timer animation, showing a stable end-state instead
     private let skipIntroAnimation: Bool
 
-    init(alienNamespace: Namespace.ID? = nil, previewDescended: Bool? = nil, previewShowPlayAgainPrompt: Bool? = nil) {
+    private let purpleGlow = Color(red: 0.70, green: 0.60, blue: 0.90)
+
+    init(alienNamespace: Namespace.ID? = nil, previewDescended: Bool? = nil, previewHasTapped: Bool? = nil) {
         self.alienNamespace = alienNamespace
         _descended = State(initialValue: previewDescended ?? false)
-        _showPlayAgainPrompt = State(initialValue: previewShowPlayAgainPrompt ?? false)
-        skipIntroAnimation = previewDescended != nil || previewShowPlayAgainPrompt != nil
+        _hasTapped = State(initialValue: previewHasTapped ?? false)
+        skipIntroAnimation = previewDescended != nil
     }
 
     private enum Outcome {
@@ -40,10 +43,6 @@ struct ResultScreen: View {
         return .tie
     }
 
-    private var isHost: Bool {
-        store.currRoom?.hostID == store.myPlayerData.id
-    }
-
     private var headline: String {
         switch outcome {
         case .visitAgain: "The Aliens decided that they would visit Earth again!"
@@ -55,6 +54,12 @@ struct ResultScreen: View {
     var body: some View {
         ZStack {
             Color.clear.ignoresSafeArea()
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    guard descended, !hasTapped, !store.showExitRoomPopUp else { return }
+                    store.requestReturnToLobby()
+                    hasTapped = true
+                }
 
             earthGraphic
 
@@ -72,32 +77,27 @@ struct ResultScreen: View {
 
                 alienCluster
 
-                if !isHost {
-                    HTHText(title: "Waiting for host to decide...", size: HTHSize.caption, font: HTHFont.space_grot)
-                        .opacity(descended ? 1 : 0)
-                }
-
                 Spacer()
+
+                if descended {
+                    HTHText(
+                        title: "Tap anywhere to go back to the lobby",
+                        size: HTHSize.caption,
+                        font: HTHFont.space_grot
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(
+                        Capsule().fill(Color.black.opacity(0.6))
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(purpleGlow, lineWidth: 1.5)
+                            .shadow(color: purpleGlow.opacity(0.6), radius: 6)
+                    )
+                }
             }
             .padding()
-
-            VStack {
-                if isHost && showPlayAgainPrompt {
-                    PopUpBuilder(
-                        isPresented: $showPlayAgainPrompt,
-                        title: "Play Again?",
-                        subtitle: "",
-                        leftBtnText: "Yes",
-                        rightBtnText: "No",
-                        leftBtnColor: HTHColor.green,
-                        rightBtnColor: HTHColor.purple,
-                        leftAction: { store.playAgain() }
-                    ) {
-                        showPlayAgainPrompt = false
-                        store.showExitRoomPopUp = true
-                    }
-                }
-            }.padding()
 
             VStack {
                 if store.showExitRoomPopUp {
@@ -114,11 +114,6 @@ struct ResultScreen: View {
             guard !skipIntroAnimation else { return }
             withAnimation(.easeInOut(duration: 2.5)) {
                 descended = true
-            }
-            Task {
-                try? await Task.sleep(for: .seconds(3))
-                store.vibrate()
-                withAnimation { showPlayAgainPrompt = true }
             }
         }
     }
@@ -199,16 +194,16 @@ private extension ResultScreen {
 
 // MARK: - Previews
 @MainActor
-private func previewResultStore(voteResult: Float?, asHost: Bool) -> GameStore {
+private func previewResultStore(voteResult: Float?) -> GameStore {
     let motionManager = MotionManager()
     let store = GameStore(motionManager: motionManager)
 
-    let cho = Player(id: asHost ? store.networkManager.myPeerId : UUID(), name: "Cho", avatar: "spaceship-yellow")
-    let karen = Player(id: asHost ? UUID() : store.networkManager.myPeerId, name: "Karen", avatar: "spaceship-blue")
+    let cho = Player(id: store.networkManager.myPeerId, name: "Cho", avatar: "spaceship-yellow")
+    let karen = Player(id: UUID(), name: "Karen", avatar: "spaceship-blue")
     let baeni = Player(id: UUID(), name: "Baeni", avatar: "spaceship-pink")
 
     store.currRoom = Room(name: "Cho's Room", hostID: cho.id, players: [cho, karen, baeni])
-    store.myPlayerData = asHost ? cho : karen
+    store.myPlayerData = cho
     store.playerGameDataList = [cho, karen, baeni].map { PlayerGameData(id: $0.id) }
     store.voteResult = voteResult
 
@@ -216,57 +211,36 @@ private func previewResultStore(voteResult: Float?, asHost: Bool) -> GameStore {
 }
 
 #Preview("Live · Watch It Animate (Yes)") {
-    let store = previewResultStore(voteResult: 1.0, asHost: true)
+    let store = previewResultStore(voteResult: 1.0)
     ResultScreen() // no preview overrides: runs the real onAppear animation, needs Xcode's Live Preview to actually play
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
 
-#Preview("Yes · Host") {
-    let store = previewResultStore(voteResult: 1.0, asHost: true)
-    ResultScreen(previewDescended: true, previewShowPlayAgainPrompt: true)
+#Preview("Yes · Tap to Continue") {
+    let store = previewResultStore(voteResult: 1.0)
+    ResultScreen(previewDescended: true)
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
 
-#Preview("Yes · Listener") {
-    let store = previewResultStore(voteResult: 1.0, asHost: false)
-    ResultScreen(previewDescended: true, previewShowPlayAgainPrompt: false)
+#Preview("No · Tap to Continue") {
+    let store = previewResultStore(voteResult: 0.0)
+    ResultScreen(previewDescended: true)
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
 
-#Preview("No · Host") {
-    let store = previewResultStore(voteResult: 0.0, asHost: true)
-    ResultScreen(previewDescended: true, previewShowPlayAgainPrompt: true)
-        .environmentObject(store)
-        .environmentObject(store.motionManager)
-}
-
-#Preview("No · Listener") {
-    let store = previewResultStore(voteResult: 0.0, asHost: false)
-    ResultScreen(previewDescended: true, previewShowPlayAgainPrompt: false)
-        .environmentObject(store)
-        .environmentObject(store.motionManager)
-}
-
-#Preview("Tie · Host") {
-    let store = previewResultStore(voteResult: 0.5, asHost: true)
-    ResultScreen(previewDescended: true, previewShowPlayAgainPrompt: true)
-        .environmentObject(store)
-        .environmentObject(store.motionManager)
-}
-
-#Preview("Tie · Listener") {
-    let store = previewResultStore(voteResult: 0.5, asHost: false)
-    ResultScreen(previewDescended: true, previewShowPlayAgainPrompt: false)
+#Preview("Tie · Tap to Continue") {
+    let store = previewResultStore(voteResult: 0.5)
+    ResultScreen(previewDescended: true)
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
 
 #Preview("Just Arrived · Pre-descend") {
-    let store = previewResultStore(voteResult: 1.0, asHost: true)
-    ResultScreen(previewDescended: false, previewShowPlayAgainPrompt: false)
+    let store = previewResultStore(voteResult: 1.0)
+    ResultScreen(previewDescended: false)
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }

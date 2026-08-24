@@ -126,6 +126,12 @@ final class GameStore: ObservableObject {
                 self?.handleVote(voteData)
             }
         }
+
+        networkManager.onReceiveReturnToLobby = { [weak self] in
+            Task { @MainActor in
+                self?.next()
+            }
+        }
     }
     
     func initAudioPlayer(sound: String) {
@@ -231,6 +237,21 @@ final class GameStore: ObservableObject {
         if state == .transitionToShareExperience {
             currentExperienceIndex = 0
             experienceRevealed = false
+        }
+        if state == .result {
+            // everyone's tapped ready on the outcome screen: reset for a new round back in the lobby
+            self.voteResult = nil
+            currentExperienceIndex = 0
+            experienceRevealed = false
+            for index in playerGameDataList.indices {
+                playerGameDataList[index].question = nil
+                playerGameDataList[index].answer = nil
+                playerGameDataList[index].experience = nil
+                playerGameDataList[index].vote = nil
+            }
+            myGameData = playerGameDataList.first(where: { $0.id == myGameData.id }) ?? myGameData
+            receivedGameData = nil
+            submittedQuestions = 0
         }
         state = state.next
         readyPlayers = 0
@@ -696,24 +717,20 @@ final class GameStore: ObservableObject {
         }
     }
 
-    // host-only: resets game-specific state and returns everyone still in the room to the lobby for a new round
-    func playAgain(){
-        phase = .none
-        voteResult = nil
-        currentExperienceIndex = 0
-        experienceRevealed = false
-        for index in playerGameDataList.indices{
-            playerGameDataList[index].question = nil
-            playerGameDataList[index].answer = nil
-            playerGameDataList[index].experience = nil
-            playerGameDataList[index].vote = nil
+    // any single player - host or participant, no consensus needed - sends the whole room back to the lobby
+    func requestReturnToLobby(){
+        if connectionToHost == nil{
+            next()
         }
-        myGameData = playerGameDataList.first(where: {$0.id == myGameData.id}) ?? myGameData
-        receivedGameData = nil
-        readyPlayers = 0
-        submittedQuestions = 0
-        state = .lobby
-        shareGameData()
+        else{
+            do{
+                let data = "ReturnToLobby".data(using: .utf8)!
+                let envelopedData = try JSONEncoder().encode(MessageEnvelope(type: .returnToLobby, data: data))
+                networkManager.send(data: envelopedData, over: connectionToHost!, errMsg: "Send return-to-lobby request failed")
+            }catch {
+                print("Encoding failed: ", error)
+            }
+        }
     }
 
     func assignQuestions() -> [UUID: UUID]{
