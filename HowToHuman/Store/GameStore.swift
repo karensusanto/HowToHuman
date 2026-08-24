@@ -228,6 +228,21 @@ final class GameStore: ObservableObject {
             currentExperienceIndex = 0
             experienceRevealed = false
         }
+        if state == .result {
+            // everyone's tapped ready on the outcome screen: reset for a new round back in the lobby
+            self.voteResult = nil
+            currentExperienceIndex = 0
+            experienceRevealed = false
+            for index in playerGameDataList.indices {
+                playerGameDataList[index].question = nil
+                playerGameDataList[index].answer = nil
+                playerGameDataList[index].experience = nil
+                playerGameDataList[index].vote = nil
+            }
+            myGameData = playerGameDataList.first(where: { $0.id == myGameData.id }) ?? myGameData
+            receivedGameData = nil
+            submittedQuestions = 0
+        }
         state = state.next
         readyPlayers = 0
         shareGameData(voteResult: voteResult, questionAssignmentList: questionAssignmentList)
@@ -669,26 +684,6 @@ final class GameStore: ObservableObject {
                 print("Encoding failed: ", error)
             }
         }
-    }
-
-    // host-only: resets game-specific state and returns everyone still in the room to the lobby for a new round
-    func playAgain(){
-        phase = .none
-        voteResult = nil
-        currentExperienceIndex = 0
-        experienceRevealed = false
-        for index in playerGameDataList.indices{
-            playerGameDataList[index].question = nil
-            playerGameDataList[index].answer = nil
-            playerGameDataList[index].experience = nil
-            playerGameDataList[index].vote = nil
-        }
-        myGameData = playerGameDataList.first(where: {$0.id == myGameData.id}) ?? myGameData
-        receivedGameData = nil
-        readyPlayers = 0
-        submittedQuestions = 0
-        state = .lobby
-        shareGameData()
     }
 
     func assignQuestions() -> [UUID: UUID]{

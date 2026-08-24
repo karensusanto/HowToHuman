@@ -51,6 +51,8 @@ enum AppState: Codable {
                 .transitionToVoting
         case .voting:
                 .result
+        case .result:
+                .lobby
         default:
             self
         }

@@ -11,22 +11,22 @@ struct ResultScreen: View {
     @EnvironmentObject var store: GameStore
 
     @State private var positions: [UUID: PlayerPosition] = [:]
-    // now only gates the opacity fade-out + "waiting" text reveal; cluster position/scale are unconditional
-    // on outcome so matchedGeometryEffect can morph continuously from VotingScreen's layout into this one
+    // gates the opacity fade-out (wontVisit) and the ready-button/footer reveal; cluster position/scale are
+    // unconditional on outcome so matchedGeometryEffect can morph continuously from VotingScreen's layout
     @State private var descended: Bool
-    @State private var showPlayAgainPrompt: Bool
+    @State private var readyMsgSubmitted: Bool
 
     // shared with VotingScreen (via RootView) so the alien cluster morphs continuously across the screen switch instead of cutting
     var alienNamespace: Namespace.ID?
 
-    // preview-only: seeding either skips the real reveal-timer animation, showing a stable end-state instead
+    // preview-only: seeding skips the real reveal-timer animation, showing a stable end-state instead
     private let skipIntroAnimation: Bool
 
-    init(alienNamespace: Namespace.ID? = nil, previewDescended: Bool? = nil, previewShowPlayAgainPrompt: Bool? = nil) {
+    init(alienNamespace: Namespace.ID? = nil, previewDescended: Bool? = nil, previewReadyMsgSubmitted: Bool? = nil) {
         self.alienNamespace = alienNamespace
         _descended = State(initialValue: previewDescended ?? false)
-        _showPlayAgainPrompt = State(initialValue: previewShowPlayAgainPrompt ?? false)
-        skipIntroAnimation = previewDescended != nil || previewShowPlayAgainPrompt != nil
+        _readyMsgSubmitted = State(initialValue: previewReadyMsgSubmitted ?? false)
+        skipIntroAnimation = previewDescended != nil
     }
 
     private enum Outcome {
@@ -38,10 +38,6 @@ struct ResultScreen: View {
         if result > 0.5 { return .visitAgain }
         if result < 0.5 { return .wontVisit }
         return .tie
-    }
-
-    private var isHost: Bool {
-        store.currRoom?.hostID == store.myPlayerData.id
     }
 
     private var headline: String {
@@ -72,32 +68,16 @@ struct ResultScreen: View {
 
                 alienCluster
 
-                if !isHost {
-                    HTHText(title: "Waiting for host to decide...", size: HTHSize.caption, font: HTHFont.space_grot)
-                        .opacity(descended ? 1 : 0)
-                }
-
                 Spacer()
+
+                if descended {
+                    if readyMsgSubmitted {
+                        HTHText(title: "Waiting for other players...", size: HTHSize.caption, font: HTHFont.space_grot)
+                    }
+                    ReadyButton(readyMsgSubmitted: $readyMsgSubmitted, isReady: .constant(true))
+                }
             }
             .padding()
-
-            VStack {
-                if isHost && showPlayAgainPrompt {
-                    PopUpBuilder(
-                        isPresented: $showPlayAgainPrompt,
-                        title: "Play Again?",
-                        subtitle: "",
-                        leftBtnText: "Yes",
-                        rightBtnText: "No",
-                        leftBtnColor: HTHColor.green,
-                        rightBtnColor: HTHColor.purple,
-                        leftAction: { store.playAgain() }
-                    ) {
-                        showPlayAgainPrompt = false
-                        store.showExitRoomPopUp = true
-                    }
-                }
-            }.padding()
 
             VStack {
                 if store.showExitRoomPopUp {
@@ -114,11 +94,6 @@ struct ResultScreen: View {
             guard !skipIntroAnimation else { return }
             withAnimation(.easeInOut(duration: 2.5)) {
                 descended = true
-            }
-            Task {
-                try? await Task.sleep(for: .seconds(3))
-                store.vibrate()
-                withAnimation { showPlayAgainPrompt = true }
             }
         }
     }
@@ -199,16 +174,16 @@ private extension ResultScreen {
 
 // MARK: - Previews
 @MainActor
-private func previewResultStore(voteResult: Float?, asHost: Bool) -> GameStore {
+private func previewResultStore(voteResult: Float?) -> GameStore {
     let motionManager = MotionManager()
     let store = GameStore(motionManager: motionManager)
 
-    let cho = Player(id: asHost ? store.networkManager.myPeerId : UUID(), name: "Cho", avatar: "spaceship-yellow")
-    let karen = Player(id: asHost ? UUID() : store.networkManager.myPeerId, name: "Karen", avatar: "spaceship-blue")
+    let cho = Player(id: store.networkManager.myPeerId, name: "Cho", avatar: "spaceship-yellow")
+    let karen = Player(id: UUID(), name: "Karen", avatar: "spaceship-blue")
     let baeni = Player(id: UUID(), name: "Baeni", avatar: "spaceship-pink")
 
     store.currRoom = Room(name: "Cho's Room", hostID: cho.id, players: [cho, karen, baeni])
-    store.myPlayerData = asHost ? cho : karen
+    store.myPlayerData = cho
     store.playerGameDataList = [cho, karen, baeni].map { PlayerGameData(id: $0.id) }
     store.voteResult = voteResult
 
@@ -216,57 +191,43 @@ private func previewResultStore(voteResult: Float?, asHost: Bool) -> GameStore {
 }
 
 #Preview("Live · Watch It Animate (Yes)") {
-    let store = previewResultStore(voteResult: 1.0, asHost: true)
+    let store = previewResultStore(voteResult: 1.0)
     ResultScreen() // no preview overrides: runs the real onAppear animation, needs Xcode's Live Preview to actually play
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
 
-#Preview("Yes · Host") {
-    let store = previewResultStore(voteResult: 1.0, asHost: true)
-    ResultScreen(previewDescended: true, previewShowPlayAgainPrompt: true)
+#Preview("Yes · Ready to Tap") {
+    let store = previewResultStore(voteResult: 1.0)
+    ResultScreen(previewDescended: true)
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
 
-#Preview("Yes · Listener") {
-    let store = previewResultStore(voteResult: 1.0, asHost: false)
-    ResultScreen(previewDescended: true, previewShowPlayAgainPrompt: false)
+#Preview("No · Ready to Tap") {
+    let store = previewResultStore(voteResult: 0.0)
+    ResultScreen(previewDescended: true)
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
 
-#Preview("No · Host") {
-    let store = previewResultStore(voteResult: 0.0, asHost: true)
-    ResultScreen(previewDescended: true, previewShowPlayAgainPrompt: true)
+#Preview("Tie · Ready to Tap") {
+    let store = previewResultStore(voteResult: 0.5)
+    ResultScreen(previewDescended: true)
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
 
-#Preview("No · Listener") {
-    let store = previewResultStore(voteResult: 0.0, asHost: false)
-    ResultScreen(previewDescended: true, previewShowPlayAgainPrompt: false)
-        .environmentObject(store)
-        .environmentObject(store.motionManager)
-}
-
-#Preview("Tie · Host") {
-    let store = previewResultStore(voteResult: 0.5, asHost: true)
-    ResultScreen(previewDescended: true, previewShowPlayAgainPrompt: true)
-        .environmentObject(store)
-        .environmentObject(store.motionManager)
-}
-
-#Preview("Tie · Listener") {
-    let store = previewResultStore(voteResult: 0.5, asHost: false)
-    ResultScreen(previewDescended: true, previewShowPlayAgainPrompt: false)
+#Preview("Ready Tapped · Waiting on Others") {
+    let store = previewResultStore(voteResult: 1.0)
+    ResultScreen(previewDescended: true, previewReadyMsgSubmitted: true)
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
 
 #Preview("Just Arrived · Pre-descend") {
-    let store = previewResultStore(voteResult: 1.0, asHost: true)
-    ResultScreen(previewDescended: false, previewShowPlayAgainPrompt: false)
+    let store = previewResultStore(voteResult: 1.0)
+    ResultScreen(previewDescended: false)
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
