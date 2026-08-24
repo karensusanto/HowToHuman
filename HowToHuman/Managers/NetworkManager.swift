@@ -39,8 +39,8 @@ class NetworkManager: ObservableObject{
             let metadata = [
                 "roomID": room.id.uuidString,
                 "hostID": room.hostID.uuidString,
-                "hostAvatar": room.players.first!.avatar,
-                "playerCount": "\(room.players.count)",
+                "hostAvatar": room.joinedPlayers.first!.avatar,
+                "playerCount": "\(room.joinedPlayers.count)",
                 "maxPlayers": "\(room.maxPlayers)"
             ]
             
@@ -103,8 +103,8 @@ class NetworkManager: ObservableObject{
         let metadata = [
             "roomID": room.id.uuidString,
             "hostID": room.hostID.uuidString,
-            "hostAvatar": room.players.first!.avatar,
-            "playerCount": "\(room.players.count)",
+            "hostAvatar": room.joinedPlayers.first!.avatar,
+            "playerCount": "\(room.joinedPlayers.count)",
             "maxPlayers": "\(room.maxPlayers)"
         ]
         

@@ -51,7 +51,7 @@ struct HomeScreen: View {
         }
         .frame(maxWidth: .infinity)
         .background {
-            HTHOnboardingBackground()
+            HTHGameBackground()
         }
     }
 }

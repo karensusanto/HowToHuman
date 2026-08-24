@@ -8,7 +8,7 @@ import Foundation
 import Network
 
 nonisolated enum TimerMode: Int, CaseIterable, Identifiable, Codable, Sendable {
-    case fast, normal, slow
+    case slow, normal, fast
 
     var id: Int { rawValue }
 
@@ -46,36 +46,47 @@ nonisolated enum TimerMode: Int, CaseIterable, Identifiable, Codable, Sendable {
             }
         }
     }
+    
+    func estimatedDuration() -> String? {
+        switch self {
+        case .fast: return "5-10"
+        case .normal: return "7-12"
+        case .slow: return "10-15"
+        }
+    }
 }
 
 struct Room: Identifiable, Codable, Sendable {
     let id: UUID
     var roomName: String
     var hostID: UUID
-    var players: [Player]
+    var inGamePlayers: [Player]
+    var joinedPlayers: [Player]
     var timerMode: TimerMode
     var maxPlayers: Int = 8
     var isPlaying: Bool = false
 
-    init(id: UUID = UUID(), name: String, hostID: UUID, players: [Player], timerMode: TimerMode = .normal) {
+    init(id: UUID = UUID(), name: String, hostID: UUID, joinedPlayers: [Player], timerMode: TimerMode = .normal) {
         self.id = id
         self.roomName = name
         self.hostID = hostID
-        self.players = players
+        self.joinedPlayers = joinedPlayers
         self.timerMode = timerMode
+        self.inGamePlayers = []
     }
 
-    var isFull: Bool { players.count >= maxPlayers }
+    var isFull: Bool { joinedPlayers.count >= maxPlayers }
     
     mutating func changeHost(){
         removePlayer(id: hostID)
-        let newHostUUID = players.first!.id
-        self.hostID = newHostUUID
-        self.roomName = "\(players.first!.name)'s Room"
+        let newHost = isPlaying ? inGamePlayers.first! : joinedPlayers.first!
+        self.hostID = newHost.id
+        self.roomName = "\(newHost.name)'s Satellite"
     }
     
     mutating func removePlayer(id: UUID){
-        players.removeAll(where: { $0.id == id })
+        inGamePlayers.removeAll(where: { $0.id == id })
+        joinedPlayers.removeAll(where: { $0.id == id })
     }
 }
 

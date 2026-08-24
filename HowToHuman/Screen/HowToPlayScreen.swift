@@ -77,7 +77,7 @@ struct HowToPlayScreen: View {
         }
         .frame(maxWidth: .infinity)
         .background {
-            HTHOnboardingBackground()
+            HTHGameBackground()
         }
     }
 }
