@@ -53,7 +53,7 @@ struct AlienNarrationScreen: View {
                             }
                         }
                     
-                    HTHText(title: "\(narrationsLen)/200", size: HTHSize.caption, color: Color.gray)
+                    HTHText(title: "\(narrationsLen)/700", size: HTHSize.caption, color: Color.gray)
                 }
 
                 Spacer()
@@ -224,8 +224,8 @@ struct AlienNarrationScreen: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
             .onChange(of: narrations) { _, newValue in
-                if newValue.count > 200 {
-                    narrations = String(newValue.prefix(200))
+                if newValue.count > 700 {
+                    narrations = String(newValue.prefix(700))
                 }
                 narrationsLen = narrations.count
             }
