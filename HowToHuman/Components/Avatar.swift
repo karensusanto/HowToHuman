@@ -76,8 +76,8 @@ struct AvatarLobbyView: View {
             player.id == store.networkManager.myPeerId ?
             HTHColor.yellow : Color.white
             
-            HTHText(title: player.name, font: HTHFont.space_grot, color: color).frame(width: 100).multilineTextAlignment(.center)
-            HTHText(title: addition, font: HTHFont.space_grot, color: color)
+            HTHText(title: LocalizedStringKey(player.name), font: HTHFont.space_grot, color: color).frame(width: 100).multilineTextAlignment(.center)
+            HTHText(title: LocalizedStringKey(addition), font: HTHFont.space_grot, color: color)
             
             Image(player.avatar).resizable().scaledToFit().frame(width:100)
             

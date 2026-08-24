@@ -10,59 +10,59 @@ import SwiftUI
 struct TransitionScreen: View {
     @EnvironmentObject var store: GameStore
     
-    let instructions: Dictionary<GamePhase, [(String, CGFloat, String)]> = [
+    let instructions: Dictionary<GamePhase, [(LocalizedStringResource, CGFloat, String)]> = [
         .none: [],
         .askHuman: [("**You are an alien.**", HTHSize.title, HTHFont.space_grot),
-                    ("You and your team have just discovered Earth.\n\n", HTHSize.title, HTHFont.space_grot),
-                    ("\n\n", HTHSize.title, HTHFont.space_grot),
+                    ("You and your team have just discovered Earth.", HTHSize.title, HTHFont.space_grot),
+                    ("\n", HTHSize.title, HTHFont.space_grot),
                     ("Curious, you want to experience human life for yourselves.", HTHSize.title, HTHFont.space_grot),
                     ("But first, you need to know how humans do things.", HTHSize.title, HTHFont.space_grot),
-                    ("\n\n", HTHSize.title, HTHFont.space_grot),
+                    ("\n", HTHSize.title, HTHFont.space_grot),
                     ("Ask a human:", HTHSize.title, HTHFont.space_grot),
                     ("**\"How do you...?\"**", HTHSize.title, HTHFont.space_grot),
                     ("The simpler, the better", HTHSize.title, HTHFont.space_grot),
-                    ("\n\n", HTHSize.title, HTHFont.space_grot)
+                    ("\n", HTHSize.title, HTHFont.space_grot)
                    ],
         
         
         .answerAlien: [("**Now, it's your turn, human.**", HTHSize.smallTitle, HTHFont.space_grot),
-                       ("\n\n", HTHSize.smallTitle, HTHFont.space_grot),
+                       ("\n", HTHSize.smallTitle, HTHFont.space_grot),
                        ("An alien needs your help understanding how to be humans", HTHSize.smallTitle, HTHFont.space_grot),
-                       ("\n\n", HTHSize.smallTitle, HTHFont.space_grot),
+                       ("\n", HTHSize.smallTitle, HTHFont.space_grot),
                        ("Answer their question as clearly as you can.", HTHSize.smallTitle, HTHFont.space_grot),
-                       ("\n\n", HTHSize.smallTitle, HTHFont.space_grot),
+                       ("\n", HTHSize.smallTitle, HTHFont.space_grot),
                        ("Beware: alien knows nothing about humans and might take everything you say literally.", HTHSize.smallTitle, HTHFont.space_grot),
-                       ("\n\n", HTHSize.smallTitle, HTHFont.space_grot),
+                       ("\n", HTHSize.smallTitle, HTHFont.space_grot),
                        ("_What could possibly go wrong?_", HTHSize.smallTitle, HTHFont.space_grot),
-                       ("\n\n", HTHSize.smallTitle, HTHFont.space_grot)
+                       ("\n", HTHSize.smallTitle, HTHFont.space_grot)
                       ],
 
         .narrateExperience: [("**Aliens, the humans have answered.**", HTHSize.title, HTHFont.space_grot),
-                             ("\n\n", HTHSize.title, HTHFont.space_grot),
+                             ("\n", HTHSize.title, HTHFont.space_grot),
                              ("Go down to Earth with the guidance the humans provided.", HTHSize.title, HTHFont.space_grot),
-                             ("\n\n", HTHSize.title, HTHFont.space_grot),
+                             ("\n", HTHSize.title, HTHFont.space_grot),
                              ("Follow their instruction, write down your experience.", HTHSize.title, HTHFont.space_grot),
                              ("What happened?", HTHSize.title, HTHFont.space_grot),
-                             ("\n\n", HTHSize.title, HTHFont.space_grot),
+                             ("\n", HTHSize.title, HTHFont.space_grot),
                              ("_Your fellow aliens will want to know._", HTHSize.title, HTHFont.space_grot),
-                             ("\n\n", HTHSize.title, HTHFont.space_grot)
+                             ("\n", HTHSize.title, HTHFont.space_grot)
                             ],
 
 
         .shareExperience: [("**Welcome back to the spaceship, aliens.**", HTHSize.title, HTHFont.space_grot),
-                            ("\n\n", HTHSize.title, HTHFont.space_grot),
+                            ("\n", HTHSize.title, HTHFont.space_grot),
                             ("Time to share our experience", HTHSize.title, HTHFont.space_grot),
-                            ("\n\n", HTHSize.title, HTHFont.space_grot),
+                            ("\n", HTHSize.title, HTHFont.space_grot),
                             ("Let's see who goes first.", HTHSize.title, HTHFont.space_grot),
-                            ("\n\n", HTHSize.title, HTHFont.space_grot)
+                            ("\n", HTHSize.title, HTHFont.space_grot)
                            ],
 
         .voting: [("Now that everyone's shared their experiences, answer this:", HTHSize.title, HTHFont.space_grot),
-                  ("\n\n", HTHSize.title, HTHFont.space_grot),
+                  ("\n", HTHSize.title, HTHFont.space_grot),
                   ("**Would you revisit Earth?**", HTHSize.title, HTHFont.space_grot),
-                  ("\n\n", HTHSize.title, HTHFont.space_grot),
+                  ("\n", HTHSize.title, HTHFont.space_grot),
                   ("Cast your vote.", HTHSize.title, HTHFont.space_grot),
-                  ("\n\n", HTHSize.title, HTHFont.space_grot),
+                  ("\n", HTHSize.title, HTHFont.space_grot),
                  ]
     ]
     
@@ -87,25 +87,19 @@ struct TransitionScreen: View {
                 VStack{
                     
                     ForEach(instruction.indices, id:\.self){ index in
-                        if instruction[index].0 == "\n\n"{
-                            Color.clear.frame(width: 40, height: 25)
-                        } else if instruction[index].0 == "\n"{
-                            Color.clear.frame(width: 40, height: 10)
-                        } else {
-                            let attributedString = try? AttributedString(
-                                markdown: instruction[index].0
+                            let attributedString = AttributedString(
+                                localized: instruction[index].0
                             )
                             HTHText(
-                                markdowntitle: attributedString ?? "",
+                                markdowntitle: attributedString,
                                 size: instruction[index].1,
                                 font: HTHFont.space_grot
                             )
                             .opacity(visibleRows[index] ? 1.0 : 0.0)
-                            .lineLimit(5)
                             .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
                             .animation(.easeIn(duration: 0.6), value: visibleRows[index])
                             .tracking(1.5)
-                        }
                     }
                     
                 }.padding(.horizontal, 30)

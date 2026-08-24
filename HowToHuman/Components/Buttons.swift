@@ -58,7 +58,7 @@ struct ReadyButton: View {
 }
 
 struct PrimaryButton: View {
-    let title: String
+    let title: LocalizedStringKey
     @State var size: CGFloat = 32
     @State var btnHeight: CGFloat = 56
     var isDisabled: Bool = false

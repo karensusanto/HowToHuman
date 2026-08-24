@@ -68,7 +68,7 @@ struct OrbitView: View {
                                     .frame(width: 100)
                                 
                                 HTHText(
-                                    title: room.roomName, size: HTHSize.caption, font: HTHFont.space_grot, weight: .medium
+                                    title: LocalizedStringKey(room.roomName), size: HTHSize.caption, font: HTHFont.space_grot, weight: .medium
                                 ).frame(width: 100).multilineTextAlignment(.center)
                                 HTHText(
                                     title: "(\(room.playerCount) / \(room.maxPlayers) Players)", size: HTHSize.caption, font: HTHFont.space_grot, weight: .medium
