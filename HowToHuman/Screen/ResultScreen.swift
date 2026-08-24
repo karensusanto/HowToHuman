@@ -139,7 +139,7 @@ private extension ResultScreen {
     var alienCluster: some View {
         GeometryReader { geo in
             ZStack {
-                ForEach(store.currRoom?.players ?? [], id: \.id) { player in
+                ForEach(store.currRoom?.inGamePlayers ?? [], id: \.id) { player in
                     if let position = positions[player.id] {
                         avatarView(for: player)
                             .scaleEffect(clusterScale)
@@ -149,7 +149,7 @@ private extension ResultScreen {
                 }
             }
             .onAppear {
-                assignPositions(for: store.currRoom?.players ?? [], into: &positions, size: geo.size, radius: 60)
+                assignPositions(for: store.currRoom?.inGamePlayers ?? [], into: &positions, size: geo.size, radius: 60)
             }
         }
         .frame(height: 280)
@@ -160,11 +160,13 @@ private extension ResultScreen {
 
     @ViewBuilder
     func avatarView(for player: Player) -> some View {
+        // inGame here means "playing a different ongoing round" (LobbyScreen's grayed-out treatment) -
+        // never true for players shown mid-round on this screen
         if let alienNamespace {
-            AvatarLobbyView(player: player) {}
+            AvatarLobbyView(player: player, inGame: false) {}
                 .matchedGeometryEffect(id: player.id, in: alienNamespace)
         } else {
-            AvatarLobbyView(player: player) {}
+            AvatarLobbyView(player: player, inGame: false) {}
         }
     }
 
@@ -202,7 +204,8 @@ private func previewResultStore(voteResult: Float?) -> GameStore {
     let karen = Player(id: UUID(), name: "Karen", avatar: "spaceship-blue")
     let baeni = Player(id: UUID(), name: "Baeni", avatar: "spaceship-pink")
 
-    store.currRoom = Room(name: "Cho's Room", hostID: cho.id, players: [cho, karen, baeni])
+    store.currRoom = Room(name: "Cho's Room", hostID: cho.id, joinedPlayers: [cho, karen, baeni])
+    store.currRoom?.inGamePlayers = [cho, karen, baeni]
     store.myPlayerData = cho
     store.playerGameDataList = [cho, karen, baeni].map { PlayerGameData(id: $0.id) }
     store.voteResult = voteResult

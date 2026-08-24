@@ -239,10 +239,12 @@ final class GameStore: ObservableObject {
             experienceRevealed = false
         }
         if state == .result {
-            // everyone's tapped ready on the outcome screen: reset for a new round back in the lobby
+            // someone tapped to head back to the lobby: reset for a new round
             self.voteResult = nil
             currentExperienceIndex = 0
             experienceRevealed = false
+            currRoom?.isPlaying = false
+            currRoom?.inGamePlayers.removeAll()
             for index in playerGameDataList.indices {
                 playerGameDataList[index].question = nil
                 playerGameDataList[index].answer = nil

@@ -32,7 +32,7 @@ struct VotingScreen: View {
 
     private var votedCount: Int {
         store.playerGameDataList.filter { data in
-            store.currRoom?.players.contains(where: { $0.id == data.id }) == true && data.vote != nil
+            store.currRoom?.inGamePlayers.contains(where: { $0.id == data.id }) == true && data.vote != nil
         }.count
     }
 
@@ -76,7 +76,7 @@ struct VotingScreen: View {
                     HTHText(title: "You can still change your vote", size: HTHSize.caption, font: HTHFont.space_grot)
                 }
 
-                HTHText(title: "\(votedCount)/\(store.currRoom?.players.count ?? 0) Aliens Voted", size: HTHSize.caption, color: HTHColor.yellow)
+                HTHText(title: "\(votedCount)/\(store.currRoom?.inGamePlayers.count ?? 0) Aliens Voted", size: HTHSize.caption, color: HTHColor.yellow)
             }
             .padding()
 
@@ -126,7 +126,7 @@ private extension VotingScreen {
     var alienCluster: some View {
         GeometryReader { geo in
             ZStack {
-                ForEach(store.currRoom?.players ?? [], id: \.id) { player in
+                ForEach(store.currRoom?.inGamePlayers ?? [], id: \.id) { player in
                     if let position = positions[player.id] {
                         avatarView(for: player)
                             .position(x: position.x, y: position.y)
@@ -134,10 +134,10 @@ private extension VotingScreen {
                 }
             }
             .onAppear {
-                assignPositions(for: store.currRoom?.players ?? [], into: &positions, size: geo.size, radius: 60)
+                assignPositions(for: store.currRoom?.inGamePlayers ?? [], into: &positions, size: geo.size, radius: 60)
             }
-            .onChange(of: store.currRoom?.players.count) {
-                assignPositions(for: store.currRoom?.players ?? [], into: &positions, size: geo.size, radius: 60)
+            .onChange(of: store.currRoom?.inGamePlayers.count) {
+                assignPositions(for: store.currRoom?.inGamePlayers ?? [], into: &positions, size: geo.size, radius: 60)
             }
         }
         .frame(height: 320)
@@ -145,11 +145,13 @@ private extension VotingScreen {
 
     @ViewBuilder
     func avatarView(for player: Player) -> some View {
+        // inGame here means "playing a different ongoing round" (LobbyScreen's grayed-out treatment) -
+        // never true for players shown mid-round on this screen
         if let alienNamespace {
-            AvatarLobbyView(player: player) {}
+            AvatarLobbyView(player: player, inGame: false) {}
                 .matchedGeometryEffect(id: player.id, in: alienNamespace)
         } else {
-            AvatarLobbyView(player: player) {}
+            AvatarLobbyView(player: player, inGame: false) {}
         }
     }
 }
@@ -166,7 +168,8 @@ private func previewVotingStore(playerCount: Int, votedCount: Int) -> GameStore 
         Player(id: UUID(), name: names[index % names.count], avatar: avatars[index % avatars.count])
     }
 
-    store.currRoom = Room(name: "Cho's Room", hostID: players[0].id, players: players)
+    store.currRoom = Room(name: "Cho's Room", hostID: players[0].id, joinedPlayers: players)
+    store.currRoom?.inGamePlayers = players
     store.myPlayerData = players[0]
     store.playerGameDataList = players.enumerated().map { index, player in
         PlayerGameData(id: player.id, vote: index < votedCount ? (index.isMultiple(of: 2) ? 1.0 : 0.0) : nil)

@@ -33,7 +33,7 @@ struct DisplayScreen: View {
 
     private var currentPlayerName: String {
         guard let data = currentGameData,
-              let player = store.currRoom?.players.first(where: { $0.id == data.id }) else {
+              let player = store.currRoom?.inGamePlayers.first(where: { $0.id == data.id }) else {
             return "A Fellow Alien"
         }
         return player.name
@@ -295,8 +295,9 @@ private func previewStore(asHost: Bool, showingLastExperience: Bool = false) -> 
     let cho = Player(id: asHost ? store.networkManager.myPeerId : UUID(), name: "Cho", avatar: "spaceship-yellow")
     let karen = Player(id: asHost ? UUID() : store.networkManager.myPeerId, name: "Karen", avatar: "spaceship-blue")
 
-    var room = Room(name: "Cho's Room", hostID: cho.id, players: [cho, karen])
+    var room = Room(name: "Cho's Room", hostID: cho.id, joinedPlayers: [cho, karen])
     room.isPlaying = true
+    room.inGamePlayers = [cho, karen]
     store.currRoom = room
 
     store.playerGameDataList = [
