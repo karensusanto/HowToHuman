@@ -84,7 +84,16 @@ struct ResultScreen: View {
                         size: HTHSize.caption,
                         font: HTHFont.space_grot
                     )
-                    .shadow(color: purpleGlow.opacity(0.8), radius: 6)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(
+                        Capsule().fill(Color.black.opacity(0.6))
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(purpleGlow, lineWidth: 1.5)
+                            .shadow(color: purpleGlow.opacity(0.6), radius: 6)
+                    )
                 }
             }
             .padding()
