@@ -142,7 +142,7 @@ struct LobbyScreen: View {
                     ExitRoomButton()
                     Spacer()
                     VStack{
-                        HTHText(title: store.currRoom?.roomName ?? "Lobby", size: HTHSize.title, color: HTHColor.yellow)
+                        HTHText(title: LocalizedStringKey(store.currRoom?.roomName ?? "Lobby"), size: HTHSize.title, color: HTHColor.yellow)
                         HTHText(title: "(\(store.currRoom?.joinedPlayers.count ?? 0) / \(store.currRoom?.maxPlayers ?? 8) Players)", font: HTHFont.space_grot, weight: .bold, color: HTHColor.yellow)
                     }
                     Spacer()

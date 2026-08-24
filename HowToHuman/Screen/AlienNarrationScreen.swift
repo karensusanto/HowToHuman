@@ -116,7 +116,7 @@ struct AlienNarrationScreen: View {
 
     private var questionPill: some View {
         
-        HTHText(title: store.myGameData.question ?? "No question", size: HTHSize.caption, font: HTHFont.space_grot, weight: .medium)
+        HTHText(title: LocalizedStringKey(store.myGameData.question ?? "No question"), size: HTHSize.caption, font: HTHFont.space_grot, weight: .medium)
             .multilineTextAlignment(.center)
             .minimumScaleFactor(0.7)
             .lineLimit(3)
@@ -186,7 +186,7 @@ struct AlienNarrationScreen: View {
     private func stepCard(index: Int) -> some View {
         VStack(alignment: .center, spacing: 5) {
     
-            HTHText(title: steps![index], font: HTHFont.space_grot, color: .black)
+            HTHText(title: LocalizedStringKey(steps![index]), font: HTHFont.space_grot, color: .black)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
             

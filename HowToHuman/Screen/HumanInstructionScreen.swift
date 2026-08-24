@@ -157,7 +157,7 @@ struct HumanInstructionScreen: View {
     }
 
     private var questionPill: some View {
-        HTHText(title: store.receivedGameData?.question ?? "No question", font: HTHFont.space_grot, weight: .medium)
+        HTHText(title: LocalizedStringKey(store.receivedGameData?.question ?? "No question"), font: HTHFont.space_grot, weight: .medium)
             .multilineTextAlignment(.center)
             .minimumScaleFactor(0.7)
             .lineLimit(3)

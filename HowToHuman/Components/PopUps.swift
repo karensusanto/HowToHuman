@@ -9,10 +9,10 @@ import SwiftUI
 
 struct PopUpBuilder: View {
     @Binding var isPresented: Bool
-    var title: String
-    var subtitle: String
-    var leftBtnText: String
-    var rightBtnText: String
+    var title: LocalizedStringKey
+    var subtitle: LocalizedStringKey
+    var leftBtnText: LocalizedStringKey
+    var rightBtnText: LocalizedStringKey
     var leftBtnColor: Color
     var rightBtnColor: Color
     // overrides the left button's default dismiss-only behavior, for popups where both buttons act (e.g. Play Again? Yes/No)
@@ -58,7 +58,7 @@ struct ExitRoomPopUp: View {
     @EnvironmentObject var store: GameStore
     @Binding var isPresented: Bool
     @State var roomName: String = ""
-    @State var subTitle: String = ""
+    @State var subTitle: LocalizedStringKey = ""
     
     var body: some View {
         PopUpBuilder(isPresented: $isPresented, title: "Exit \(roomName)?", subtitle: subTitle, leftBtnText: "No", rightBtnText: "Yes", leftBtnColor: HTHColor.green, rightBtnColor: .white.opacity(0.3)){
@@ -161,7 +161,7 @@ struct TimerCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20){
-            let title = timerMode.label
+            let title = LocalizedStringKey(timerMode.label)
             HStack(){
                 if !isSelected{Spacer()}
                 HTHText(title: title, color: isSelected ? selectedTextColor : unselectedTextColor)

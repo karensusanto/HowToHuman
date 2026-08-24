@@ -24,11 +24,11 @@ struct HTHFont{
 }
 
 struct HTHText: View {
-    var title: String = ""
-    @State var markdowntitle: AttributedString = AttributedString("")
-    @State var size: CGFloat = HTHSize.body
-    @State var font: String = HTHFont.slackey
-    @State var weight: Font.Weight = .regular
+    var title: LocalizedStringKey = ""
+    var markdowntitle: AttributedString = AttributedString("")
+    var size: CGFloat = HTHSize.body
+    var font: String = HTHFont.slackey
+    var weight: Font.Weight = .regular
     var color: Color = Color.white
     
     var body: some View {

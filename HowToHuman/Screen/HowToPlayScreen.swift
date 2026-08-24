@@ -9,7 +9,7 @@ import SwiftUI
 struct HowToPlayScreen: View {
     @EnvironmentObject var store: GameStore
     
-    private let story : [String] = [
+    private let story : [LocalizedStringResource] = [
         """
         What happens when someone with **absolutely no knowledge of humanity** tries to follow human instructions? Well, let's find out.
         """,
@@ -26,11 +26,11 @@ struct HowToPlayScreen: View {
         **Help the aliens have a positive experience on Earth — or risk angering them.**
         """]
     
-    private let steps: [(String, String)] = [
+    private let steps: [(String, LocalizedStringResource)] = [
         ("Phase 1: Ask", "Everyone is an alien. Think of something simple you've always wondered about doing as a human - _the simpler, the better._ Ask a human: **_\"How do you...?\"_**"),
         ("Phase 2: Guide", "Everyone is a now human. You get one of the alien's questions and must create a step-by-step guide to answer it."),
         ("Phase 3: Follow", "Everyone is back to being an alien. Follow the human's instructions **_as literally as possible_**, then write down your experience. Look for gaps, misunderstandings, and opportunities for things to go hilariously wrong. Be creative!"),
-        ("Phase 4: Share", "Review everyone's experience from Earth. Then vote: **Did the aliens have a positive experience with humanity?**")
+        ("Phase 4: Share", "Review everyone's experience from Earth. Then vote: **Would you revisit Earth?**")
     ]
     
     var body: some View {
@@ -50,9 +50,9 @@ struct HowToPlayScreen: View {
                     VStack(alignment: .center, spacing: 40){
                         
                         VStack(alignment: .center, spacing: 20){
-                            ForEach(story, id: \.self){paragraph in
-                                let attributedString = try? AttributedString(markdown: paragraph)
-                                HTHText(markdowntitle: attributedString ?? "", font: HTHFont.space_grot)
+                            ForEach(story.indices, id: \.self){idx in
+                                let attributedString = AttributedString(localized: story[idx])
+                                HTHText(markdowntitle: attributedString, font: HTHFont.space_grot)
                                     .multilineTextAlignment(.center)
                             }
                         }
@@ -60,9 +60,9 @@ struct HowToPlayScreen: View {
                         
                         ForEach(steps.indices, id: \.self){ i in
                             VStack(alignment: .center, spacing: 10){
-                                HTHText(title: steps[i].0, size: HTHSize.title, color: HTHColor.yellow)
-                                let attributedString = try? AttributedString(markdown: steps[i].1)
-                                HTHText(markdowntitle: attributedString ?? "", font: HTHFont.space_grot)
+                                HTHText(title: LocalizedStringKey(steps[i].0), size: HTHSize.title, color: HTHColor.yellow)
+                                let attributedString = AttributedString(localized: steps[i].1)
+                                HTHText(markdowntitle: attributedString, font: HTHFont.space_grot)
                                     .multilineTextAlignment(.center)
                             }
                         }
