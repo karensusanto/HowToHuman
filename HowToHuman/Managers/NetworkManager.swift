@@ -27,6 +27,7 @@ class NetworkManager: ObservableObject{
     var onReceivePlayerGameData: ((PlayerGameData, NWConnection) -> Void)?
     var onReceiveReaction: ((Bubble, NWConnection) -> Void)?
     var onReceiveReady: ((String) -> Void)?
+    var onReceiveVote: ((PlayerGameData) -> Void)?
     
     func startAdvertising(room : Room) {
         do {
@@ -212,8 +213,16 @@ class NetworkManager: ObservableObject{
                     case .readiness:
                         print("Received readiness status")
                         let readiness = String(data: envelope.data, encoding: .utf8)!
-                        
+
                         self.onReceiveReady?(readiness)
+                    case .vote:
+                        print("Received vote")
+                        let voteData = try JSONDecoder().decode(
+                            PlayerGameData.self,
+                            from: envelope.data
+                        )
+
+                        self.onReceiveVote?(voteData)
                     }
                     
                     
@@ -240,6 +249,8 @@ class NetworkManager: ObservableObject{
                         print("Failed to decode reaction.")
                     case .readiness:
                         print("Failed to decode ready status.")
+                    case .vote:
+                        print("Failed to decode vote.")
                     }
                     
                 }

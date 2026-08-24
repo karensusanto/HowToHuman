@@ -29,6 +29,7 @@ enum MessageType: Codable{
     case leaveNotice
     case reaction
     case readiness
+    case vote
 }
 
 struct MessageEnvelope: Codable{
@@ -53,6 +54,8 @@ struct SharedGameData: Codable, Sendable {
     var migrateHost: Bool
     var connectToNewHost: Bool
     var assignedQuestionPlayerId: UUID?
+    var currentExperienceIndex: Int = 0
+    var experienceRevealed: Bool = false
 }
 
 struct JoinRequest: Codable, Sendable {

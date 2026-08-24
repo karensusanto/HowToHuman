@@ -15,18 +15,20 @@ struct PopUpBuilder: View {
     var rightBtnText: String
     var leftBtnColor: Color
     var rightBtnColor: Color
+    // overrides the left button's default dismiss-only behavior, for popups where both buttons act (e.g. Play Again? Yes/No)
+    var leftAction: (() -> Void)? = nil
     var action: () -> Void
-    
+
     var body: some View {
         VStack(spacing: 20){
             VStack(spacing: 10){
                 HTHText(title: title, font: HTHFont.space_grot)
                 HTHText(title: subtitle, size: HTHSize.caption, font: HTHFont.space_grot)
             }
-            
+
             HStack{
                 PrimaryButton(title:leftBtnText, btnColor: leftBtnColor){
-                    isPresented = false
+                    if let leftAction { leftAction() } else { isPresented = false }
                 }
                 
                 PrimaryButton(title:rightBtnText, btnColor: rightBtnColor){

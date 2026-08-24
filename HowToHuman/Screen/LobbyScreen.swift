@@ -20,7 +20,6 @@ func findAvailablePosition(
 ) -> PlayerPosition? {
 
     for _ in 0..<1000 {
-        let radius = CGFloat(80)
         let x = CGFloat.random(
             in: radius...(size.width - radius)
         )
@@ -49,6 +48,17 @@ func findAvailablePosition(
     }
 
     return nil
+}
+
+// gives each player a scattered position, keeping existing ones and dropping any player no longer in the list
+func assignPositions(for players: [Player], into positions: inout [UUID: PlayerPosition], size: CGSize, radius: CGFloat = 30) {
+    for player in players where positions[player.id] == nil {
+        if let position = findAvailablePosition(existing: Array(positions.values), size: size, radius: radius) {
+            positions[player.id] = position
+        }
+    }
+    let playerIDs = Set(players.map(\.id))
+    positions = positions.filter { playerIDs.contains($0.key) }
 }
 
 struct playersView: View {
