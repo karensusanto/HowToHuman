@@ -16,6 +16,9 @@ struct ResultScreen: View {
     @State private var videoFinished: Bool
     // debounce only - tapping sends the whole room back immediately, there's no one else to wait on
     @State private var hasTapped: Bool
+    // flips false->true on appear; KeyframeAnimator's trigger needs an actual value change to
+    // guarantee it fires, rather than relying on "plays automatically on appear" alone
+    @State private var flightStarted = false
 
     // preview-only: skips starting real video playback/observers, showing a stable end-state instead
     private let skipIntroAnimation: Bool
@@ -136,6 +139,7 @@ struct ResultScreen: View {
             store.playChime()
             guard !skipIntroAnimation else { return }
             startVideo()
+            flightStarted = true
         }
         .onDisappear {
             player?.pause()
@@ -174,45 +178,66 @@ private extension ResultScreen {
         .frame(height: 280)
     }
 
-    // A loop-de-loop flourish (so the path reads as alive, not a straight slide) followed by a
-    // swoop to flightDestination, with scale/opacity easing in over the same span. Each index gets
-    // a staggered start and alternating loop direction so the cluster doesn't move in lockstep.
+    // A two-loop-de-loop flourish (so the path reads as alive, not a straight slide) followed by a
+    // long swoop to flightDestination, with scale/opacity easing in over the same span. Each index
+    // gets a staggered start and alternating loop direction so the cluster doesn't move in lockstep.
+    // Deliberately spans ~7-8s so the motion is the dominant thing on screen for most of the
+    // 10s video, rather than snapping to its resting spot in the first couple seconds.
     @ViewBuilder
     func flyingAvatar(for player: Player, index: Int) -> some View {
-        let loopSign: CGFloat = index.isMultiple(of: 2) ? 1 : -1
-        let loopRadius: CGFloat = 36
-        let stagger = Double(index) * 0.15
-        let dest = flightDestination
-
-        KeyframeAnimator(initialValue: UFOFlight(), trigger: 0) { value in
+        if skipIntroAnimation {
+            // preview: show the settled end-state directly, no animation to wait on
+            let dest = flightDestination
             AvatarLobbyView(player: player, inGame: false) {}
-                .offset(x: value.offsetX, y: value.offsetY)
-                .scaleEffect(value.scale)
-                .opacity(value.opacity)
-        } keyframes: { _ in
-            KeyframeTrack(\.offsetX) {
-                LinearKeyframe(0, duration: stagger)
-                LinearKeyframe(loopRadius * loopSign, duration: 0.35)
-                LinearKeyframe(0, duration: 0.35)
-                LinearKeyframe(-loopRadius * loopSign, duration: 0.35)
-                LinearKeyframe(0, duration: 0.35)
-                CubicKeyframe(dest.dx, duration: 1.4)
-            }
-            KeyframeTrack(\.offsetY) {
-                LinearKeyframe(0, duration: stagger)
-                LinearKeyframe(-loopRadius, duration: 0.35)
-                LinearKeyframe(-loopRadius * 2, duration: 0.35)
-                LinearKeyframe(-loopRadius, duration: 0.35)
-                LinearKeyframe(0, duration: 0.35)
-                CubicKeyframe(dest.dy, duration: 1.4)
-            }
-            KeyframeTrack(\.scale) {
-                LinearKeyframe(1, duration: stagger + 1.4)
-                CubicKeyframe(dest.scale, duration: 1.2)
-            }
-            KeyframeTrack(\.opacity) {
-                LinearKeyframe(1, duration: stagger + 1.8)
-                CubicKeyframe(dest.opacity, duration: 0.8)
+                .offset(x: dest.dx, y: dest.dy)
+                .scaleEffect(dest.scale)
+                .opacity(dest.opacity)
+        } else {
+            let loopSign: CGFloat = index.isMultiple(of: 2) ? 1 : -1
+            let loopRadius: CGFloat = 40
+            let stagger = Double(index) * 0.15
+            let dest = flightDestination
+
+            KeyframeAnimator(initialValue: UFOFlight(), trigger: flightStarted) { value in
+                AvatarLobbyView(player: player, inGame: false) {}
+                    .offset(x: value.offsetX, y: value.offsetY)
+                    .scaleEffect(value.scale)
+                    .opacity(value.opacity)
+            } keyframes: { _ in
+                KeyframeTrack(\.offsetX) {
+                    LinearKeyframe(0, duration: stagger)
+                    // loop 1
+                    LinearKeyframe(loopRadius * loopSign, duration: 0.4)
+                    LinearKeyframe(0, duration: 0.4)
+                    LinearKeyframe(-loopRadius * loopSign, duration: 0.4)
+                    LinearKeyframe(0, duration: 0.4)
+                    // loop 2, wider, opposite starting direction
+                    LinearKeyframe(-loopRadius * 1.4 * loopSign, duration: 0.4)
+                    LinearKeyframe(0, duration: 0.4)
+                    LinearKeyframe(loopRadius * 1.4 * loopSign, duration: 0.4)
+                    LinearKeyframe(0, duration: 0.4)
+                    CubicKeyframe(dest.dx, duration: 3.5)
+                }
+                KeyframeTrack(\.offsetY) {
+                    LinearKeyframe(0, duration: stagger)
+                    LinearKeyframe(-loopRadius, duration: 0.4)
+                    LinearKeyframe(-loopRadius * 2, duration: 0.4)
+                    LinearKeyframe(-loopRadius, duration: 0.4)
+                    LinearKeyframe(0, duration: 0.4)
+                    LinearKeyframe(loopRadius * 1.4, duration: 0.4)
+                    LinearKeyframe(loopRadius * 2.8, duration: 0.4)
+                    LinearKeyframe(loopRadius * 1.4, duration: 0.4)
+                    LinearKeyframe(0, duration: 0.4)
+                    CubicKeyframe(dest.dy, duration: 3.5)
+                }
+                KeyframeTrack(\.scale) {
+                    LinearKeyframe(1, duration: stagger + 3.2)
+                    CubicKeyframe(dest.scale, duration: 3.5)
+                }
+                KeyframeTrack(\.opacity) {
+                    LinearKeyframe(1, duration: stagger + 4.0)
+                    CubicKeyframe(dest.opacity, duration: 2.5)
+                }
             }
         }
     }
