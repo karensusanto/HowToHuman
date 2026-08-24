@@ -51,6 +51,12 @@ struct ResultScreen: View {
     var body: some View {
         ZStack {
             Color.clear.ignoresSafeArea()
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    guard descended, !readyMsgSubmitted, !store.showExitRoomPopUp else { return }
+                    store.sendReadyStatus(true)
+                    readyMsgSubmitted = true
+                }
 
             earthGraphic
 
@@ -71,10 +77,11 @@ struct ResultScreen: View {
                 Spacer()
 
                 if descended {
-                    if readyMsgSubmitted {
-                        HTHText(title: "Waiting for other players...", size: HTHSize.caption, font: HTHFont.space_grot)
-                    }
-                    ReadyButton(readyMsgSubmitted: $readyMsgSubmitted, isReady: .constant(true))
+                    HTHText(
+                        title: readyMsgSubmitted ? "Waiting for other players..." : "Tap anywhere to go back to the lobby",
+                        size: HTHSize.caption,
+                        font: HTHFont.space_grot
+                    )
                 }
             }
             .padding()
@@ -197,28 +204,28 @@ private func previewResultStore(voteResult: Float?) -> GameStore {
         .environmentObject(store.motionManager)
 }
 
-#Preview("Yes · Ready to Tap") {
+#Preview("Yes · Tap to Continue") {
     let store = previewResultStore(voteResult: 1.0)
     ResultScreen(previewDescended: true)
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
 
-#Preview("No · Ready to Tap") {
+#Preview("No · Tap to Continue") {
     let store = previewResultStore(voteResult: 0.0)
     ResultScreen(previewDescended: true)
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
 
-#Preview("Tie · Ready to Tap") {
+#Preview("Tie · Tap to Continue") {
     let store = previewResultStore(voteResult: 0.5)
     ResultScreen(previewDescended: true)
         .environmentObject(store)
         .environmentObject(store.motionManager)
 }
 
-#Preview("Ready Tapped · Waiting on Others") {
+#Preview("Tapped · Waiting on Others") {
     let store = previewResultStore(voteResult: 1.0)
     ResultScreen(previewDescended: true, previewReadyMsgSubmitted: true)
         .environmentObject(store)
