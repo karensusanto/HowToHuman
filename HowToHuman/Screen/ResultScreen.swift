@@ -22,6 +22,8 @@ struct ResultScreen: View {
     // preview-only: seeding skips the real reveal-timer animation, showing a stable end-state instead
     private let skipIntroAnimation: Bool
 
+    private let purpleGlow = Color(red: 0.70, green: 0.60, blue: 0.90)
+
     init(alienNamespace: Namespace.ID? = nil, previewDescended: Bool? = nil, previewReadyMsgSubmitted: Bool? = nil) {
         self.alienNamespace = alienNamespace
         _descended = State(initialValue: previewDescended ?? false)
@@ -82,6 +84,7 @@ struct ResultScreen: View {
                         size: HTHSize.caption,
                         font: HTHFont.space_grot
                     )
+                    .shadow(color: purpleGlow.opacity(0.8), radius: 6)
                 }
             }
             .padding()
