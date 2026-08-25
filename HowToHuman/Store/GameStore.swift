@@ -238,7 +238,12 @@ final class GameStore: ObservableObject {
             currRoom?.inGamePlayers = currRoom?.joinedPlayers ?? []
             currRoom?.isPlaying = true
         }
-        if !AppState.transitions().contains(state){
+        // .result is an interstitial state like the transitionTo* screens, not a genuine phase
+        // advance - the real advance for the next round happens below when .lobby -> transitionToAskHuman
+        // fires. Without this exclusion, phase runs permanently one step ahead of state for the
+        // rest of the game: it eventually wraps to .none while state is mid-round, and TransitionScreen
+        // renders phase .none as an empty instructions list - a blank screen with just the exit button.
+        if !AppState.transitions().contains(state) && state != .result {
             print("Phase before next: ", phase)
             phase = phase.next
         }
