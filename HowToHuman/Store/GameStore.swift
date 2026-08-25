@@ -265,6 +265,7 @@ final class GameStore: ObservableObject {
         }
         state = state.next
         readyPlayers = 0
+        print("next() -> phase:", phase, "state:", state, "inGamePlayers:", currRoom?.inGamePlayers.count ?? -1)
         shareGameData(voteResult: voteResult, questionAssignmentList: questionAssignmentList)
     }
 
@@ -276,6 +277,7 @@ final class GameStore: ObservableObject {
 
     // host-only: moves on to the next player's experience, or into voting once everyone's been shown
     func advanceExperience(){
+        print("advanceExperience() currentExperienceIndex:", currentExperienceIndex, "playerGameDataList.count:", playerGameDataList.count, "inGamePlayers.count:", currRoom?.inGamePlayers.count ?? -1)
         if currentExperienceIndex < playerGameDataList.count - 1{
             currentExperienceIndex += 1
             experienceRevealed = false
@@ -376,7 +378,7 @@ final class GameStore: ObservableObject {
     }
     
     func handleSharedData(_ sharedData: SharedGameData, connection: NWConnection){
-        print("Handling Received Shared Data")
+        print("Handling Received Shared Data - incoming phase:", sharedData.gamePhase, "state:", sharedData.gameState, "| local phase:", phase, "state:", state)
         self.currRoom = sharedData.room
         if phase != sharedData.gamePhase {//changed phase
             self.phase = sharedData.gamePhase
@@ -385,6 +387,7 @@ final class GameStore: ObservableObject {
         if state != sharedData.gameState {//changed state
             self.state = sharedData.gameState
         }
+        print("Handling Received Shared Data - resolved phase:", phase, "state:", state)
         
         self.playerGameDataList = sharedData.playerGameDataList
         self.currentExperienceIndex = sharedData.currentExperienceIndex
