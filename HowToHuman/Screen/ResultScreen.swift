@@ -200,7 +200,10 @@ private extension ResultScreen {
         } else {
             let loopSign: CGFloat = index.isMultiple(of: 2) ? 1 : -1
             let loopRadius: CGFloat = 40
-            let stagger = Double(index) * 0.15
+            // index 0's stagger lands on exactly 0.0, and a zero-duration first keyframe on
+            // offsetX/offsetY (unlike scale/opacity, which always add +3.2/+4.0) makes
+            // KeyframeAnimator fail to render that instance at all - keep it just above zero
+            let stagger = max(Double(index) * 0.15, 0.01)
             let dest = flightDestination
 
             KeyframeAnimator(initialValue: UFOFlight(), trigger: flightStarted) { value in

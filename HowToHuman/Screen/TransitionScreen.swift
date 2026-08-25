@@ -101,7 +101,7 @@ struct TransitionScreen: View {
                                 font: HTHFont.space_grot
                             )
                             .opacity(visibleRows[index] ? 1.0 : 0.0)
-                            .lineLimit(5)
+                            .lineLimit(10)
                             .multilineTextAlignment(.center)
                             .animation(.easeIn(duration: 0.6), value: visibleRows[index])
                             .tracking(1.5)
