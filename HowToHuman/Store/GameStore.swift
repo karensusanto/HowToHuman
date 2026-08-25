@@ -195,6 +195,10 @@ final class GameStore: ObservableObject {
         else{
             readyPlayers -= 1
         }
+        // ReadyButton only appears on askHuman/answerAlien/narrateExperience - a "Ready" message
+        // delayed by network latency can arrive after the host already moved past that phase
+        // (e.g. its own timer fired first), and would otherwise trigger an unrelated next() call
+        guard [GamePhase.askHuman, .answerAlien, .narrateExperience].contains(phase) else { return }
         if readyPlayers == currRoom!.inGamePlayers.count{
             next()
         }
