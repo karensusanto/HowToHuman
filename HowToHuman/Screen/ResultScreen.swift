@@ -140,6 +140,8 @@ struct ResultScreen: View {
         .frame(maxWidth: .infinity)
         .onAppear {
             store.playChime()
+            let players = store.currRoom?.inGamePlayers ?? []
+            print("ResultScreen appeared - inGamePlayers:", players.map { "\($0.name)/\($0.avatar)/\($0.id)" }, "myPeerId:", store.networkManager.myPeerId, "hostID:", store.currRoom?.hostID as Any)
             guard !skipIntroAnimation else { return }
             startVideo()
             flightStarted = true
