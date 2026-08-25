@@ -58,11 +58,11 @@ struct DisplayScreen: View {
 
                 pageIndicator
 
+                Spacer()
+
                 if store.experienceRevealed && !showingStepsPeek {
                     reactionRow
                 }
-
-                Spacer()
 
                 footer
             }
@@ -229,7 +229,7 @@ private extension DisplayScreen {
     }
 
     var reactionRow: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 24) {
             reactionButton("LOLAlienEmoji")
             reactionButton("LoveAlienEmoji")
             reactionButton("WowAlienEmoji")
@@ -249,7 +249,7 @@ private extension DisplayScreen {
             }
         }
         .frame(maxHeight: .infinity, alignment: .bottom)
-        .padding(.bottom, 120)
+        .padding(.bottom, 90)
         .allowsHitTesting(false)
     }
 
@@ -260,9 +260,7 @@ private extension DisplayScreen {
             Image(assetName)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 36, height: 36)
-                .frame(width: 56, height: 56)
-                .background(Circle().fill(Color.white.opacity(0.15)))
+                .frame(width: 72, height: 72)
         }
     }
 
