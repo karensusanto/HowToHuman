@@ -129,6 +129,10 @@ final class GameStore: ObservableObject {
 
         networkManager.onReceiveReturnToLobby = { [weak self] in
             Task { @MainActor in
+                // any player can trigger this independently, so more than one return-to-lobby
+                // request can arrive after the first already moved state past .result - ignore
+                // the duplicates instead of letting next() race through several more phases unattended
+                guard self?.state == .result else { return }
                 self?.next()
             }
         }
@@ -722,6 +726,9 @@ final class GameStore: ObservableObject {
     // any single player - host or participant, no consensus needed - sends the whole room back to the lobby
     func requestReturnToLobby(){
         if connectionToHost == nil{
+            // guard mirrors onReceiveReturnToLobby's: the host's own tap can race with an
+            // already-processed request from someone else
+            guard state == .result else { return }
             next()
         }
         else{

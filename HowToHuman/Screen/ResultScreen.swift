@@ -66,12 +66,14 @@ struct ResultScreen: View {
         }
     }
 
-    // where each UFO ends up relative to its VotingScreen starting position, and how it looks once there
+    // where each UFO ends up relative to its VotingScreen starting position, and how it looks once there.
+    // The cluster now starts high on screen, above where the video's Earth settles - visit descends
+    // onto it, leave/slime both flee further up into space (slime doesn't linger after souring on Earth).
     private var flightDestination: (dx: CGFloat, dy: CGFloat, scale: CGFloat, opacity: Double) {
         switch outcome {
-        case .visit: (0, 160, 0.45, 0.95)  // converge down toward Earth, stay mostly visible
-        case .leave: (0, -420, 0.3, 0.1)   // shoot up off-screen, fade almost away
-        case .slime: (0, 120, 0.5, 0.2)    // dip toward Earth to slime it, then fade - they don't stick around
+        case .visit: (0, 260, 0.45, 0.95)  // descend down onto Earth, stay mostly visible
+        case .leave: (0, -220, 0.3, 0.1)   // flee further up into space, fade almost away
+        case .slime: (0, -220, 0.35, 0.2)  // same - flee upward after souring on Earth
         }
     }
 
@@ -102,8 +104,9 @@ struct ResultScreen: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
 
-                Spacer()
-
+                // no Spacer here on purpose: matches VotingScreen's layout (cluster right after the
+                // header, no spacer before it) so the starting position sits high on screen, above
+                // where the video's Earth settles, and lines up with where the player saw it on vote
                 alienCluster
 
                 Spacer()

@@ -230,17 +230,19 @@ private extension DisplayScreen {
 
     var reactionRow: some View {
         HStack(spacing: 16) {
-            reactionButton("😂")
-            reactionButton("🥰")
-            reactionButton("😱")
+            reactionButton("LOLAlienEmoji")
+            reactionButton("LoveAlienEmoji")
+            reactionButton("WowAlienEmoji")
         }
     }
 
     var reactionBubbleOverlay: some View {
         ZStack {
             ForEach(store.bubbles) { bubble in
-                Text(bubble.emoji)
-                    .font(.system(size: 32))
+                Image(bubble.assetName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 40, height: 40)
                     .offset(x: bubble.x, y: bubble.y)
                     .opacity(bubble.opacity)
                     .scaleEffect(bubble.scale)
@@ -251,12 +253,14 @@ private extension DisplayScreen {
         .allowsHitTesting(false)
     }
 
-    func reactionButton(_ emoji: String) -> some View {
+    func reactionButton(_ assetName: String) -> some View {
         Button {
-            createBubble(emoji: emoji, store: store)
+            createBubble(assetName: assetName, store: store)
         } label: {
-            Text(emoji)
-                .font(.system(size: 32))
+            Image(assetName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 36, height: 36)
                 .frame(width: 56, height: 56)
                 .background(Circle().fill(Color.white.opacity(0.15)))
         }
