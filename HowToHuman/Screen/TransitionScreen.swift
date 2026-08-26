@@ -123,7 +123,7 @@ struct TransitionScreen: View {
                 startSequencedAnimation()
                 switch store.phase {
                 case .none:
-                    store.initAudioPlayer(sound: "(ONBOARDING)")
+                    store.stopOnboardingSong()
                 case .askHuman:
                     store.initAudioPlayer(sound: "(ASK)")
                 case .answerAlien:

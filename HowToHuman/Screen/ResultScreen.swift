@@ -145,7 +145,6 @@ struct ResultScreen: View {
             guard !skipIntroAnimation else { return }
             startVideo()
             flightStarted = true
-            store.initAudioPlayer(sound: "(ONBOARDING)")
         }
         .onDisappear {
             player?.pause()

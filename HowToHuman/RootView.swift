@@ -49,7 +49,7 @@ struct RootView: View {
         .onAppear{
             store.initChimeAudioPlayer()
             store.initButtonAudioPlayer()
-            store.initAudioPlayer(sound: "(ONBOARDING)")
+            store.initOnboardingAudioPlayer()
         }
     }
 }

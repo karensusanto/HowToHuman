@@ -99,6 +99,7 @@ struct playersView: View {
                 }
             }
             .onAppear{
+                store.playOnboardingSong()
                 updatePositions(
                     players: store.currRoom?.joinedPlayers ?? [],
                     size: geo.size

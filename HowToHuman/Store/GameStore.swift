@@ -46,10 +46,12 @@ final class GameStore: ObservableObject {
     @Published var experienceRevealed: Bool = false
     
     private var soundPlayer: AVAudioPlayer?
+    private var onboardingSoundPlayer: AVAudioPlayer?
     private var chimeSoundPlayer: AVAudioPlayer?
     private var buttonSoundPlayer: AVAudioPlayer?
     private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
     let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+    private var onboardingSongPlaying: Bool = false
     
     init(motionManager: MotionManager) {
         self.networkManager = NetworkManager()
@@ -146,6 +148,12 @@ final class GameStore: ObservableObject {
         soundPlayer = try? AVAudioPlayer(contentsOf: url)
         soundPlayer?.prepareToPlay()
     }
+    func initOnboardingAudioPlayer() {
+        guard let url = Bundle.main.url(forResource: "(ONBOARDING)", withExtension: "mp3") else { return }
+        print("init audio player")
+        onboardingSoundPlayer = try? AVAudioPlayer(contentsOf: url)
+        onboardingSoundPlayer?.prepareToPlay()
+    }
     func initChimeAudioPlayer() {
         guard let url = Bundle.main.url(forResource: "chime", withExtension: "mp3") else { return }
         print("init chime audio player")
@@ -174,7 +182,19 @@ final class GameStore: ObservableObject {
     func stopSong(){
         soundPlayer?.stop()
         soundPlayer?.currentTime = 0
-        initAudioPlayer(sound: "(ONBOARDING)")
+    }
+    func playOnboardingSong() {
+        if !onboardingSongPlaying{
+            onboardingSoundPlayer?.numberOfLoops = -1
+            onboardingSoundPlayer?.currentTime = 0
+            onboardingSoundPlayer?.play()
+            onboardingSongPlaying = true
+        }
+    }
+    func stopOnboardingSong(){
+        onboardingSoundPlayer?.stop()
+        onboardingSoundPlayer?.currentTime = 0
+        onboardingSongPlaying = false
     }
     func vibrate(){
         AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
