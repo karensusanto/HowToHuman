@@ -141,8 +141,8 @@ private extension DisplayScreen {
     }
 
     var stepsStage: some View {
-        VStack(spacing: 16) {
-            VStack(spacing: 10) {
+        VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 10) {
                 ForEach(Array((currentGameData?.answer ?? []).enumerated()), id: \.offset) { index, step in
                     HStack(alignment: .top, spacing: 12) {
                         HTHText(title: "\(index + 1).", font: HTHFont.space_grot, weight: .medium, color: .black)
@@ -151,21 +151,17 @@ private extension DisplayScreen {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(14)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.white)
-                    )
                 }
 
                 if currentGameData?.answer?.isEmpty ?? true {
                     HTHText(title: "The human did not respond", font: HTHFont.space_grot, color: .black)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
+            .padding(20)
+            .padding(.bottom, 10) // extra room so text doesn't crowd the tail wedge baked into the shape below
+            .frame(maxWidth: .infinity)
+            .speechBubbleStyle(purpleGlow)
 
             Image(human)
                 .resizable()
@@ -196,15 +192,7 @@ private extension DisplayScreen {
             .padding(20)
             .padding(.bottom, 10) // extra room so text doesn't crowd the tail wedge baked into the shape below
             .frame(maxWidth: .infinity)
-            .background(
-                SpeechBubbleShape()
-                    .fill(Color.white)
-            )
-            .overlay(
-                SpeechBubbleShape()
-                    .stroke(purpleGlow, lineWidth: 2)
-                    .shadow(color: purpleGlow.opacity(0.8), radius: 10)
-            )
+            .speechBubbleStyle(purpleGlow)
             .contentShape(Rectangle())
             .onTapGesture {
                 guard !isHost else { return }
@@ -322,6 +310,28 @@ struct SpeechBubbleShape: Shape {
         path.addArc(center: CGPoint(x: rect.minX + r, y: rect.minY + r), radius: r, startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
         path.closeSubpath()
         return path
+    }
+}
+
+private struct SpeechBubbleStyle: ViewModifier {
+    let glow: Color
+
+    func body(content: Content) -> some View {
+        content
+            .background(SpeechBubbleShape().fill(Color.white))
+            .overlay(
+                SpeechBubbleShape()
+                    .stroke(glow, lineWidth: 2.5)
+                    // stacked shadows (tight + wide) read as a punchier glow than one alone
+                    .shadow(color: glow.opacity(0.9), radius: 8)
+                    .shadow(color: glow.opacity(0.6), radius: 22)
+            )
+    }
+}
+
+private extension View {
+    func speechBubbleStyle(_ glow: Color) -> some View {
+        modifier(SpeechBubbleStyle(glow: glow))
     }
 }
 
