@@ -148,11 +148,9 @@ struct HumanInstructionScreen: View {
         }
         .onReceive(timer) { _ in
             guard timeRemaining > 0 else {
+                // host is authoritative: only the host advances on timeout, see AlienQuestionScreen
                 if store.currRoom?.hostID == store.myPlayerData.id {
                     return store.next()
-                }
-                else{
-                    store.state = store.state.next
                 }
                 return
             }

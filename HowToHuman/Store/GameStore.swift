@@ -126,6 +126,16 @@ final class GameStore: ObservableObject {
                 self?.handleVote(voteData)
             }
         }
+
+        networkManager.onReceiveReturnToLobby = { [weak self] in
+            Task { @MainActor in
+                // any player can trigger this independently, so more than one return-to-lobby
+                // request can arrive after the first already moved state past .result - ignore
+                // the duplicates instead of letting next() race through several more phases unattended
+                guard self?.state == .result else { return }
+                self?.next()
+            }
+        }
     }
     
     func initAudioPlayer(sound: String) {
@@ -185,6 +195,10 @@ final class GameStore: ObservableObject {
         else{
             readyPlayers -= 1
         }
+        // ReadyButton only appears on askHuman/answerAlien/narrateExperience - a "Ready" message
+        // delayed by network latency can arrive after the host already moved past that phase
+        // (e.g. its own timer fired first), and would otherwise trigger an unrelated next() call
+        guard [GamePhase.askHuman, .answerAlien, .narrateExperience].contains(phase) else { return }
         if readyPlayers == currRoom!.inGamePlayers.count{
             next()
         }
@@ -224,7 +238,12 @@ final class GameStore: ObservableObject {
             currRoom?.inGamePlayers = currRoom?.joinedPlayers ?? []
             currRoom?.isPlaying = true
         }
-        if !AppState.transitions().contains(state){
+        // .result is an interstitial state like the transitionTo* screens, not a genuine phase
+        // advance - the real advance for the next round happens below when .lobby -> transitionToAskHuman
+        // fires. Without this exclusion, phase runs permanently one step ahead of state for the
+        // rest of the game: it eventually wraps to .none while state is mid-round, and TransitionScreen
+        // renders phase .none as an empty instructions list - a blank screen with just the exit button.
+        if !AppState.transitions().contains(state) && state != .result {
             print("Phase before next: ", phase)
             phase = phase.next
         }
@@ -232,8 +251,26 @@ final class GameStore: ObservableObject {
             currentExperienceIndex = 0
             experienceRevealed = false
         }
+        if state == .result {
+            // someone tapped to head back to the lobby: reset for a new round
+            self.voteResult = nil
+            currentExperienceIndex = 0
+            experienceRevealed = false
+            currRoom?.isPlaying = false
+            currRoom?.inGamePlayers.removeAll()
+            for index in playerGameDataList.indices {
+                playerGameDataList[index].question = nil
+                playerGameDataList[index].answer = nil
+                playerGameDataList[index].experience = nil
+                playerGameDataList[index].vote = nil
+            }
+            myGameData = playerGameDataList.first(where: { $0.id == myGameData.id }) ?? myGameData
+            receivedGameData = nil
+            submittedQuestions = 0
+        }
         state = state.next
         readyPlayers = 0
+        print("next() -> phase:", phase, "state:", state, "inGamePlayers:", currRoom?.inGamePlayers.count ?? -1)
         shareGameData(voteResult: voteResult, questionAssignmentList: questionAssignmentList)
     }
 
@@ -245,6 +282,7 @@ final class GameStore: ObservableObject {
 
     // host-only: moves on to the next player's experience, or into voting once everyone's been shown
     func advanceExperience(){
+        print("advanceExperience() currentExperienceIndex:", currentExperienceIndex, "playerGameDataList.count:", playerGameDataList.count, "inGamePlayers.count:", currRoom?.inGamePlayers.count ?? -1)
         if currentExperienceIndex < playerGameDataList.count - 1{
             currentExperienceIndex += 1
             experienceRevealed = false
@@ -321,7 +359,7 @@ final class GameStore: ObservableObject {
         case .readmitted:
             state = .lobby
         case .kicked:
-            clearGame()
+            clearGame(stopAdvertising: true)
         }
         
     
@@ -345,7 +383,7 @@ final class GameStore: ObservableObject {
     }
     
     func handleSharedData(_ sharedData: SharedGameData, connection: NWConnection){
-        print("Handling Received Shared Data")
+        print("Handling Received Shared Data - incoming phase:", sharedData.gamePhase, "state:", sharedData.gameState, "| local phase:", phase, "state:", state)
         self.currRoom = sharedData.room
         if phase != sharedData.gamePhase {//changed phase
             self.phase = sharedData.gamePhase
@@ -354,6 +392,7 @@ final class GameStore: ObservableObject {
         if state != sharedData.gameState {//changed state
             self.state = sharedData.gameState
         }
+        print("Handling Received Shared Data - resolved phase:", phase, "state:", state)
         
         self.playerGameDataList = sharedData.playerGameDataList
         self.currentExperienceIndex = sharedData.currentExperienceIndex
@@ -696,24 +735,23 @@ final class GameStore: ObservableObject {
         }
     }
 
-    // host-only: resets game-specific state and returns everyone still in the room to the lobby for a new round
-    func playAgain(){
-        phase = .none
-        voteResult = nil
-        currentExperienceIndex = 0
-        experienceRevealed = false
-        for index in playerGameDataList.indices{
-            playerGameDataList[index].question = nil
-            playerGameDataList[index].answer = nil
-            playerGameDataList[index].experience = nil
-            playerGameDataList[index].vote = nil
+    // any single player - host or participant, no consensus needed - sends the whole room back to the lobby
+    func requestReturnToLobby(){
+        if connectionToHost == nil{
+            // guard mirrors onReceiveReturnToLobby's: the host's own tap can race with an
+            // already-processed request from someone else
+            guard state == .result else { return }
+            next()
         }
-        myGameData = playerGameDataList.first(where: {$0.id == myGameData.id}) ?? myGameData
-        receivedGameData = nil
-        readyPlayers = 0
-        submittedQuestions = 0
-        state = .lobby
-        shareGameData()
+        else{
+            do{
+                let data = "ReturnToLobby".data(using: .utf8)!
+                let envelopedData = try JSONEncoder().encode(MessageEnvelope(type: .returnToLobby, data: data))
+                networkManager.send(data: envelopedData, over: connectionToHost!, errMsg: "Send return-to-lobby request failed")
+            }catch {
+                print("Encoding failed: ", error)
+            }
+        }
     }
 
     func assignQuestions() -> [UUID: UUID]{

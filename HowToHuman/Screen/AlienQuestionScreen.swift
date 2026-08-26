@@ -154,11 +154,12 @@ struct AlienQuestionScreen: View {
         }
         .onReceive(timer) { _ in
             guard timeRemaining > 0 else {
+                // host is authoritative: only the host advances on timeout. A non-host guessing
+                // state.next() locally desyncs it from phase (which only next() updates), since
+                // that skips next()'s special-case resets - wait for the host's own identically-
+                // seeded timer to expire and broadcast the real phase+state together instead.
                 if store.currRoom?.hostID == store.myPlayerData.id {
                     return store.next()
-                }
-                else{
-                    store.state = store.state.next
                 }
                 return
             }

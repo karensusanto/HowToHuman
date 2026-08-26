@@ -83,7 +83,7 @@ struct TransitionScreen: View {
                 }
                 Spacer()
                 
-                let instruction = instructions[store.phase]!
+                let instruction = instructions[store.phase] ?? []
                 VStack{
                     
                     ForEach(instruction.indices, id:\.self){ index in
@@ -119,6 +119,7 @@ struct TransitionScreen: View {
                 
             }.padding()
             .onAppear{
+                print("TransitionScreen appeared - state:", store.state, "phase:", store.phase, "instructions found:", instructions[store.phase] != nil)
                 startSequencedAnimation()
             }
             .onTapGesture {
@@ -150,7 +151,7 @@ struct TransitionScreen: View {
     }
     
     private func startSequencedAnimation() {
-        for index in instructions[store.phase]!.indices {
+        for index in (instructions[store.phase] ?? []).indices {
             let item = DispatchWorkItem {
                 visibleRows[index] = true
             }
@@ -170,7 +171,7 @@ struct TransitionScreen: View {
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) {
-            visibleRows = Array(repeating: true, count: instructions[store.phase]!.count)
+            visibleRows = Array(repeating: true, count: (instructions[store.phase] ?? []).count)
         }
     }
 }
