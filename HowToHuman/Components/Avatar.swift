@@ -20,13 +20,6 @@ class AlienAvatar{
     ]
 }
 
-class HumanAvatar{
-    static var allCases: [String] = [
-        "human-girl",
-        "human-boy",
-    ]
-}
-
 struct Avatar: View {
     let avatar: String
     @State private var floating: Bool = false
