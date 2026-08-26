@@ -167,6 +167,7 @@ private extension DisplayScreen {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 130)
+                .padding()
         }
     }
 
