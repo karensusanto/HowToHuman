@@ -21,6 +21,7 @@ struct AlienQuestionScreen: View {
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     @State var isReady: Bool = false
+    @FocusState private var isTextFieldFocused: Bool
     
     private var placeholderText: String {
         let typedChars = Array(answerText)
@@ -43,7 +44,6 @@ struct AlienQuestionScreen: View {
                 
                 HStack {
                     ExitRoomButton()
-                    Color.clear.frame(width: 40, height: 40)
                     Spacer()
                     HTHText(title: "Ask a Human", size: HTHSize.largeTitle, color: HTHColor.yellow)
                     Spacer()
@@ -84,6 +84,7 @@ struct AlienQuestionScreen: View {
                         .font(.custom(HTHFont.space_grot, size: HTHSize.body))
                         .focused($isAnswerFocused)
                         .opacity(0.02)
+                        .focused($isTextFieldFocused)
                 )
                 .onChange(of: answerText) {
                     if answerText.count > maxCharacters {
@@ -107,6 +108,8 @@ struct AlienQuestionScreen: View {
                 }
                 
                 HTHText(title: "Keep it simple, ask about things they'd probably do everyday.", size: HTHSize.caption, font: HTHFont.space_grot)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
 
                     Spacer()
                 
@@ -116,6 +119,9 @@ struct AlienQuestionScreen: View {
                 ReadyButton(readyMsgSubmitted: $readyMsgSubmitted, isReady: $isReady)
             }
             .padding()
+            .onTapGesture {
+                isTextFieldFocused = false
+            }
             
             VStack{
                 if store.showExitRoomPopUp{
@@ -141,6 +147,10 @@ struct AlienQuestionScreen: View {
         }
         .onChange(of: answerText){
             isReady = !answerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            if readyMsgSubmitted{
+                store.sendReadyStatus(false)
+                readyMsgSubmitted = false
+            }
         }
         .onReceive(timer) { _ in
             guard timeRemaining > 0 else {

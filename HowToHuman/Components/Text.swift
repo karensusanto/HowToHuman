@@ -15,7 +15,7 @@ struct HTHSize{
     static let smallTitle : CGFloat = 22
     static let smallerTitle : CGFloat = 20
     static let body : CGFloat = 16
-    static let caption : CGFloat = 12
+    static let caption : CGFloat = 14
 }
 
 struct HTHFont{

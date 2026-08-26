@@ -165,10 +165,13 @@ struct LobbyScreen: View {
                     Color.clear.frame(width: 40, height: 40)
                 }
                 
-                playersView(positions: $positions, selectedPlayer: $selectedPlayer, showPopUp: $store.showKickPlayerPopUp)
+                VStack{
+                    playersView(positions: $positions, selectedPlayer: $selectedPlayer, showPopUp: $store.showKickPlayerPopUp)
+                }
                 
                 if store.currRoom?.hostID == store.networkManager.myPeerId{
-                    
+                    HTHText(title: "You can remove a player by tapping on their UFO.", size: HTHSize.caption, font: HTHFont.space_grot)
+                    Spacer()
                     HStack{
                         OpenSettingButton(){
                             store.showSettingPopUp = true
