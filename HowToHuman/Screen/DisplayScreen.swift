@@ -176,33 +176,35 @@ private extension DisplayScreen {
 
     var narrationStage: some View {
         VStack(spacing: 0) {
-            ZStack {
-                // baked-in rounded rect + tail, so the pointer is never visually detached from the bubble
-                Image("NarrationDisplayBubble")
-                    .resizable()
-                    .aspectRatio(370.0 / 296.0, contentMode: .fit)
-
-                VStack(alignment: .trailing, spacing: 8) {
-                    if isHost || transcriptRevealed {
-                        HTHText(title: LocalizedStringKey(currentGameData?.experience ?? "No experience shared"), font: HTHFont.space_grot, color: .black)
-                            .multilineTextAlignment(.leading)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    } else {
-                        HTHText(title: "Listen to your friends' experience.", font: HTHFont.space_grot, weight: .medium, color: .black)
-                            .multilineTextAlignment(.center)
-                    }
-
-                    HTHText(
-                        title: isHost ? "[Read it out loud]" : (transcriptRevealed ? "[tap to hide transcript]" : "[tap to reveal transcript]"),
-                        size: HTHSize.caption,
-                        font: HTHFont.space_grot,
-                        color: .black.opacity(0.6)
-                    )
+            VStack(alignment: .trailing, spacing: 8) {
+                if isHost || transcriptRevealed {
+                    HTHText(title: LocalizedStringKey(currentGameData?.experience ?? "No experience shared"), font: HTHFont.space_grot, color: .black)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    HTHText(title: "Listen to your friends' experience.", font: HTHFont.space_grot, weight: .medium, color: .black)
+                        .multilineTextAlignment(.center)
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 20)
-                .padding(.bottom, 40) // clears the tail baked into the bottom of the bubble art
+
+                HTHText(
+                    title: isHost ? "[Read it out loud]" : (transcriptRevealed ? "[tap to hide transcript]" : "[tap to reveal transcript]"),
+                    size: HTHSize.caption,
+                    font: HTHFont.space_grot,
+                    color: .black.opacity(0.6)
+                )
             }
+            .padding(20)
+            .padding(.bottom, 10) // extra room so text doesn't crowd the tail wedge baked into the shape below
+            .frame(maxWidth: .infinity)
+            .background(
+                SpeechBubbleShape()
+                    .fill(Color.white)
+            )
+            .overlay(
+                SpeechBubbleShape()
+                    .stroke(purpleGlow, lineWidth: 2)
+                    .shadow(color: purpleGlow.opacity(0.8), radius: 10)
+            )
             .contentShape(Rectangle())
             .onTapGesture {
                 guard !isHost else { return }
@@ -284,6 +286,42 @@ private extension DisplayScreen {
                 HTHText(title: "Wait for host to continue", font: HTHFont.space_grot)
             }
         }
+    }
+}
+
+// A rounded rect with a downward-pointing tail carved directly into the bottom edge, traced as
+// one continuous outline - so a stroke/shadow applied to it wraps the body and tail seamlessly,
+// unlike a separate RoundedRectangle + Triangle pair (which can show a gap or a mismatched border
+// where the two shapes meet).
+struct SpeechBubbleShape: Shape {
+    var cornerRadius: CGFloat = 16
+    var tailWidth: CGFloat = 22
+    var tailHeight: CGFloat = 14
+    // fraction of the width where the tail is centered
+    var tailPosition: CGFloat = 0.5
+
+    func path(in rect: CGRect) -> Path {
+        let r = min(cornerRadius, min(rect.width, rect.height - tailHeight) / 2)
+        let bodyMaxY = rect.maxY - tailHeight
+        let tailCenterX = rect.minX + rect.width * tailPosition
+        let tailLeftX = max(rect.minX + r, tailCenterX - tailWidth / 2)
+        let tailRightX = min(rect.maxX - r, tailCenterX + tailWidth / 2)
+
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX + r, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX - r, y: rect.minY))
+        path.addArc(center: CGPoint(x: rect.maxX - r, y: rect.minY + r), radius: r, startAngle: .degrees(-90), endAngle: .degrees(0), clockwise: false)
+        path.addLine(to: CGPoint(x: rect.maxX, y: bodyMaxY - r))
+        path.addArc(center: CGPoint(x: rect.maxX - r, y: bodyMaxY - r), radius: r, startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
+        path.addLine(to: CGPoint(x: tailRightX, y: bodyMaxY))
+        path.addLine(to: CGPoint(x: tailCenterX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: tailLeftX, y: bodyMaxY))
+        path.addLine(to: CGPoint(x: rect.minX + r, y: bodyMaxY))
+        path.addArc(center: CGPoint(x: rect.minX + r, y: bodyMaxY - r), radius: r, startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false)
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + r))
+        path.addArc(center: CGPoint(x: rect.minX + r, y: rect.minY + r), radius: r, startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
+        path.closeSubpath()
+        return path
     }
 }
 
