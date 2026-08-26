@@ -53,6 +53,7 @@ struct ReadyButton: View {
         PrimaryButton(title: "Ready", isDisabled: !isReady || readyMsgSubmitted) {
             store.sendReadyStatus(true)
             readyMsgSubmitted = true
+            store.playButtonSound()
         }
     }
 }

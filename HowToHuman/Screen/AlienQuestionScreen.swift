@@ -135,6 +135,7 @@ struct AlienQuestionScreen: View {
         }
         .onAppear{
             store.playChime()
+            store.playSong()
             store.submittedQuestions = 0
             timeRemaining = (store.currRoom?.timerMode.seconds(for: .question)) ?? 0
         }
@@ -144,6 +145,7 @@ struct AlienQuestionScreen: View {
             }
             store.submitGameData(data: store.myGameData)
             store.vibrate()
+            store.stopSong()
         }
         .onChange(of: answerText){
             isReady = !answerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty

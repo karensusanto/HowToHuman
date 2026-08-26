@@ -48,6 +48,8 @@ struct RootView: View {
         .transition(.opacity)
         .onAppear{
             store.initChimeAudioPlayer()
+            store.initButtonAudioPlayer()
+            store.initAudioPlayer(sound: "(ONBOARDING)")
         }
     }
 }

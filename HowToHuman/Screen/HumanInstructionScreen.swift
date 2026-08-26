@@ -123,6 +123,7 @@ struct HumanInstructionScreen: View {
         }
         .onAppear{
             store.playChime()
+            store.playSong()
             timeRemaining = (store.currRoom?.timerMode.seconds(for: .steps)) ?? 0
         }
         .onDisappear{
@@ -136,6 +137,7 @@ struct HumanInstructionScreen: View {
                 store.submitGameData(data: receivedGameData)
             }
             store.vibrate()
+            store.stopSong()
         }
         .onChange(of: filledStepsCount){
             isReady = filledStepsCount > 0

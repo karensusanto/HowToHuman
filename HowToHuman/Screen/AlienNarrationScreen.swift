@@ -75,6 +75,7 @@ struct AlienNarrationScreen: View {
         }
         .onAppear{
             store.playChime()
+            store.playSong()
             steps = store.myGameData.answer
             timeRemaining = (store.currRoom?.timerMode.seconds(for: .question)) ?? 0
         }
@@ -84,6 +85,7 @@ struct AlienNarrationScreen: View {
             }
             store.submitGameData(data: store.myGameData)
             store.vibrate()
+            store.stopSong()
         }
         .onChange(of: narrations){
             isReady = !narrations.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
