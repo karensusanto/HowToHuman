@@ -87,10 +87,12 @@ struct VotingScreen: View {
         }
         .onAppear {
             store.playChime()
+            store.playSong()
             timeRemaining = previewTimeRemaining ?? (store.currRoom?.timerMode.seconds(for: .question) ?? 0)
         }
         .onDisappear {
             store.vibrate()
+            store.stopSong()
         }
         .onReceive(timer) { _ in
             guard timeRemaining > 0 else {

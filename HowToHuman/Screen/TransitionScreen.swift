@@ -121,6 +121,21 @@ struct TransitionScreen: View {
             .onAppear{
                 print("TransitionScreen appeared - state:", store.state, "phase:", store.phase, "instructions found:", instructions[store.phase] != nil)
                 startSequencedAnimation()
+                switch store.phase {
+                case .none:
+                    store.initAudioPlayer(sound: "(ONBOARDING)")
+                case .askHuman:
+                    store.initAudioPlayer(sound: "(ASK)")
+                case .answerAlien:
+                    store.initAudioPlayer(sound: "(GUIDE)")
+                case .narrateExperience:
+                    store.initAudioPlayer(sound: "(FOLLOW)")
+                case .shareExperience:
+                    store.initAudioPlayer(sound: "(READING)")
+                case .voting:
+                    store.initAudioPlayer(sound: "(VOTE)")
+                }
+                
             }
             .onTapGesture {
                 skipAnimation()

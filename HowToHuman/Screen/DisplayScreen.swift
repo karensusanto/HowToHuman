@@ -84,6 +84,10 @@ struct DisplayScreen: View {
         }
         .onAppear {
             store.playChime()
+            store.playSong()
+        }
+        .onDisappear{
+            store.stopSong()
         }
         .onChange(of: store.currentExperienceIndex) {
             transcriptRevealed = false

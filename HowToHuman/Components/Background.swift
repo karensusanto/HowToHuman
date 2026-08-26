@@ -9,7 +9,7 @@ import SwiftUI
 
 struct HTHGameBackground: View {
     @EnvironmentObject var motionManager: MotionManager
-    var bgImage: String = "stars-bg-2"
+    var bgImage: String = "stars-bg"
     var body: some View {
         ZStack {
             LinearGradient(

@@ -46,6 +46,8 @@ final class GameStore: ObservableObject {
     @Published var experienceRevealed: Bool = false
     
     private var soundPlayer: AVAudioPlayer?
+    private var chimeSoundPlayer: AVAudioPlayer?
+    private var buttonSoundPlayer: AVAudioPlayer?
     private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
     let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
     
@@ -146,13 +148,32 @@ final class GameStore: ObservableObject {
     }
     func initChimeAudioPlayer() {
         guard let url = Bundle.main.url(forResource: "chime", withExtension: "mp3") else { return }
-        print("init audio player")
-        soundPlayer = try? AVAudioPlayer(contentsOf: url)
-        soundPlayer?.prepareToPlay()
+        print("init chime audio player")
+        chimeSoundPlayer = try? AVAudioPlayer(contentsOf: url)
+        chimeSoundPlayer?.prepareToPlay()
+    }
+    func initButtonAudioPlayer() {
+        guard let url = Bundle.main.url(forResource: "ready", withExtension: "wav") else { return }
+        print("init button audio player")
+        buttonSoundPlayer = try? AVAudioPlayer(contentsOf: url)
+        buttonSoundPlayer?.prepareToPlay()
     }
     func playChime() {
+        chimeSoundPlayer?.currentTime = 0
+        chimeSoundPlayer?.play()
+    }
+    func playButtonSound() {
+        buttonSoundPlayer?.currentTime = 0
+        buttonSoundPlayer?.play()
+    }
+    func playSong() {
+        soundPlayer?.numberOfLoops = -1
         soundPlayer?.currentTime = 0
         soundPlayer?.play()
+    }
+    func stopSong(){
+        soundPlayer?.stop()
+        soundPlayer?.currentTime = 0
     }
     func vibrate(){
         AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
