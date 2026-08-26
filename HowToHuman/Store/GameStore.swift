@@ -321,7 +321,7 @@ final class GameStore: ObservableObject {
         case .readmitted:
             state = .lobby
         case .kicked:
-            clearGame()
+            clearGame(stopAdvertising: true)
         }
         
     

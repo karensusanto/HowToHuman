@@ -169,7 +169,7 @@ class NetworkManager: ObservableObject{
                             
                         case .kicked:
                             print("You have been kicked from the room")
-                            self.onJoinResponse?(.readmitted, connection)
+                            self.onJoinResponse?(.kicked, connection)
                         }
                         
                         
