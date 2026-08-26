@@ -60,7 +60,7 @@ struct DisplayScreen: View {
 
                 Spacer()
 
-                if store.experienceRevealed && !showingStepsPeek {
+                if store.experienceRevealed {
                     reactionRow
                 }
 
@@ -280,7 +280,7 @@ private extension DisplayScreen {
                     store.advanceExperience()
                 }
             } else {
-                PrimaryButton(title: "Finish", isDisabled: true) {}
+                HTHText(title: "Wait for host to continue", font: HTHFont.space_grot)
             }
         }
     }
