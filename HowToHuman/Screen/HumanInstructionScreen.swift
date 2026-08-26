@@ -35,7 +35,7 @@ struct HumanInstructionScreen: View {
 
     @State private var assignmentList: [UUID: UUID] = [:]
     @State private var listHeight: CGFloat = 0
-    private let human = "human"
+    private let human = HumanAvatar.allCases.randomElement() ?? "human-girl"
     
     var body: some View {
         ZStack {

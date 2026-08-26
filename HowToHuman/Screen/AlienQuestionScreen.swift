@@ -51,12 +51,12 @@ struct AlienQuestionScreen: View {
                 }
                 
                 ZStack(alignment: .top) {
-                    Image("alien-asking")
+                    Image(store.myPlayerData.avatar)
                         .resizable()
                         .scaledToFit()
                         .frame(width: 190, height: 120)
                         .padding(.top, 44)
-
+                    
                     SpeechBubbleDots()
                 }
                 
