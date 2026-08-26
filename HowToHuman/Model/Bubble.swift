@@ -7,7 +7,7 @@
 import SwiftUI
 
 struct Bubble: Identifiable, Codable {
-    let emoji: String
+    let assetName: String
     let id: UUID
     var x: CGFloat
     var y: CGFloat
@@ -16,11 +16,11 @@ struct Bubble: Identifiable, Codable {
     var sender: UUID
 }
 
-func createBubble(emoji: String, store: GameStore) {
+func createBubble(assetName: String, store: GameStore) {
     let id = UUID()
 
     let bubble = Bubble(
-        emoji: emoji,
+        assetName: assetName,
         id: id,
         x: CGFloat.random(in: -30...30),
         y: 0,

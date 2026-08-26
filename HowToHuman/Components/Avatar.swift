@@ -95,7 +95,8 @@ struct AvatarLobbyView: View {
     }
     
     var body: some View {
-        if store.networkManager.myPeerId == store.currRoom?.hostID{
+        // only the host can tap avatars (to kick), and never their own - a host can't kick itself
+        if store.networkManager.myPeerId == store.currRoom?.hostID && player.id != store.networkManager.myPeerId {
             Button{
                 action()
             }label:{
@@ -105,7 +106,7 @@ struct AvatarLobbyView: View {
         else{
             playerDisplay
         }
-        
+
     }
 }
 

@@ -11,19 +11,14 @@ import Combine
 struct VotingScreen: View {
     @EnvironmentObject var store: GameStore
 
-    @State private var positions: [UUID: PlayerPosition] = [:]
     @State private var timeRemaining: Int = 0
     // nil = haven't voted yet; votes stay changeable up until the timer runs out or everyone's voted
     @State private var myVote: Bool?
 
-    // shared with ResultScreen (via RootView) so the alien cluster morphs continuously across the screen switch instead of cutting
-    var alienNamespace: Namespace.ID?
-
     // preview-only: lets #Preview seed a fixed countdown / current-vote state that's otherwise only reachable by interacting live
     private let previewTimeRemaining: Int?
 
-    init(alienNamespace: Namespace.ID? = nil, previewTimeRemaining: Int? = nil, previewMyVote: Bool? = nil) {
-        self.alienNamespace = alienNamespace
+    init(previewTimeRemaining: Int? = nil, previewMyVote: Bool? = nil) {
         self.previewTimeRemaining = previewTimeRemaining
         _myVote = State(initialValue: previewMyVote)
     }
@@ -32,7 +27,7 @@ struct VotingScreen: View {
 
     private var votedCount: Int {
         store.playerGameDataList.filter { data in
-            store.currRoom?.players.contains(where: { $0.id == data.id }) == true && data.vote != nil
+            store.currRoom?.inGamePlayers.contains(where: { $0.id == data.id }) == true && data.vote != nil
         }.count
     }
 
@@ -76,7 +71,7 @@ struct VotingScreen: View {
                     HTHText(title: "You can still change your vote", size: HTHSize.caption, font: HTHFont.space_grot)
                 }
 
-                HTHText(title: "\(votedCount)/\(store.currRoom?.players.count ?? 0) Aliens Voted", size: HTHSize.caption, color: HTHColor.yellow)
+                HTHText(title: "\(votedCount)/\(store.currRoom?.inGamePlayers.count ?? 0) Aliens Voted", size: HTHSize.caption, color: HTHColor.yellow)
             }
             .padding()
 
@@ -99,10 +94,12 @@ struct VotingScreen: View {
         }
         .onReceive(timer) { _ in
             guard timeRemaining > 0 else {
+                // host is authoritative: only the host resolves on timeout. A non-host guessing
+                // state.next() locally would skip next()'s .result reset (clearing playerGameDataList,
+                // currentExperienceIndex, inGamePlayers, etc.) and desync phase from state - wait for
+                // the host's own identically-seeded timer to expire and broadcast the real values instead.
                 if store.currRoom?.hostID == store.myPlayerData.id {
                     store.resolveVote()
-                } else {
-                    store.state = store.state.next
                 }
                 return
             }
@@ -125,32 +122,18 @@ private extension VotingScreen {
 
     var alienCluster: some View {
         GeometryReader { geo in
+            let players = store.currRoom?.inGamePlayers ?? []
             ZStack {
-                ForEach(store.currRoom?.players ?? [], id: \.id) { player in
-                    if let position = positions[player.id] {
-                        avatarView(for: player)
-                            .position(x: position.x, y: position.y)
-                    }
+                ForEach(Array(players.enumerated()), id: \.element.id) { index, player in
+                    let position = clusterPosition(index: index, count: players.count, size: geo.size)
+                    // inGame here means "playing a different ongoing round" (LobbyScreen's grayed-out
+                    // treatment) - never true for players shown mid-round on this screen
+                    AvatarLobbyView(player: player, inGame: false) {}
+                        .position(x: position.x, y: position.y)
                 }
-            }
-            .onAppear {
-                assignPositions(for: store.currRoom?.players ?? [], into: &positions, size: geo.size, radius: 60)
-            }
-            .onChange(of: store.currRoom?.players.count) {
-                assignPositions(for: store.currRoom?.players ?? [], into: &positions, size: geo.size, radius: 60)
             }
         }
         .frame(height: 320)
-    }
-
-    @ViewBuilder
-    func avatarView(for player: Player) -> some View {
-        if let alienNamespace {
-            AvatarLobbyView(player: player) {}
-                .matchedGeometryEffect(id: player.id, in: alienNamespace)
-        } else {
-            AvatarLobbyView(player: player) {}
-        }
     }
 }
 
@@ -166,7 +149,8 @@ private func previewVotingStore(playerCount: Int, votedCount: Int) -> GameStore 
         Player(id: UUID(), name: names[index % names.count], avatar: avatars[index % avatars.count])
     }
 
-    store.currRoom = Room(name: "Cho's Room", hostID: players[0].id, players: players)
+    store.currRoom = Room(name: "Cho's Room", hostID: players[0].id, joinedPlayers: players)
+    store.currRoom?.inGamePlayers = players
     store.myPlayerData = players[0]
     store.playerGameDataList = players.enumerated().map { index, player in
         PlayerGameData(id: player.id, vote: index < votedCount ? (index.isMultiple(of: 2) ? 1.0 : 0.0) : nil)

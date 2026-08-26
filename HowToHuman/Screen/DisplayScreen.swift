@@ -33,7 +33,7 @@ struct DisplayScreen: View {
 
     private var currentPlayerName: String {
         guard let data = currentGameData,
-              let player = store.currRoom?.players.first(where: { $0.id == data.id }) else {
+              let player = store.currRoom?.inGamePlayers.first(where: { $0.id == data.id }) else {
             return "A Fellow Alien"
         }
         return player.name
@@ -58,11 +58,11 @@ struct DisplayScreen: View {
 
                 pageIndicator
 
-                if store.experienceRevealed && !showingStepsPeek {
+                Spacer()
+
+                if store.experienceRevealed {
                     reactionRow
                 }
-
-                Spacer()
 
                 footer
             }
@@ -97,7 +97,7 @@ struct DisplayScreen: View {
 // MARK: - Sections
 private extension DisplayScreen {
     var questionPill: some View {
-        HTHText(title: currentGameData?.question ?? "No question", size: HTHSize.caption, font: HTHFont.space_grot, weight: .medium)
+        HTHText(title: LocalizedStringKey(currentGameData?.question ?? "No question"), size: HTHSize.caption, font: HTHFont.space_grot, weight: .medium)
             .multilineTextAlignment(.center)
             .minimumScaleFactor(0.7)
             .lineLimit(3)
@@ -144,7 +144,7 @@ private extension DisplayScreen {
                 ForEach(Array((currentGameData?.answer ?? []).enumerated()), id: \.offset) { index, step in
                     HStack(alignment: .top, spacing: 12) {
                         HTHText(title: "\(index + 1).", font: HTHFont.space_grot, weight: .medium, color: .black)
-                        HTHText(title: step, font: HTHFont.space_grot, color: .black)
+                        HTHText(title: LocalizedStringKey(step), font: HTHFont.space_grot, color: .black)
                             .multilineTextAlignment(.leading)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -176,7 +176,7 @@ private extension DisplayScreen {
         VStack(spacing: 5) {
             VStack(alignment: .trailing, spacing: 8) {
                 if isHost || transcriptRevealed {
-                    HTHText(title: currentGameData?.experience ?? "No experience shared", font: HTHFont.space_grot, color: .black)
+                    HTHText(title: LocalizedStringKey(currentGameData?.experience ?? "No experience shared"), font: HTHFont.space_grot, color: .black)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
@@ -229,36 +229,38 @@ private extension DisplayScreen {
     }
 
     var reactionRow: some View {
-        HStack(spacing: 16) {
-            reactionButton("😂")
-            reactionButton("🥰")
-            reactionButton("😱")
+        HStack(spacing: 24) {
+            reactionButton("LOLAlienEmoji")
+            reactionButton("LoveAlienEmoji")
+            reactionButton("WowAlienEmoji")
         }
     }
 
     var reactionBubbleOverlay: some View {
         ZStack {
             ForEach(store.bubbles) { bubble in
-                Text(bubble.emoji)
-                    .font(.system(size: 32))
+                Image(bubble.assetName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 40, height: 40)
                     .offset(x: bubble.x, y: bubble.y)
                     .opacity(bubble.opacity)
                     .scaleEffect(bubble.scale)
             }
         }
         .frame(maxHeight: .infinity, alignment: .bottom)
-        .padding(.bottom, 120)
+        .padding(.bottom, 90)
         .allowsHitTesting(false)
     }
 
-    func reactionButton(_ emoji: String) -> some View {
+    func reactionButton(_ assetName: String) -> some View {
         Button {
-            createBubble(emoji: emoji, store: store)
+            createBubble(assetName: assetName, store: store)
         } label: {
-            Text(emoji)
-                .font(.system(size: 32))
-                .frame(width: 56, height: 56)
-                .background(Circle().fill(Color.white.opacity(0.15)))
+            Image(assetName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 72, height: 72)
         }
     }
 
@@ -278,7 +280,7 @@ private extension DisplayScreen {
                     store.advanceExperience()
                 }
             } else {
-                PrimaryButton(title: "Finish", isDisabled: true) {}
+                HTHText(title: "Wait for host to continue", font: HTHFont.space_grot)
             }
         }
     }
@@ -295,8 +297,9 @@ private func previewStore(asHost: Bool, showingLastExperience: Bool = false) -> 
     let cho = Player(id: asHost ? store.networkManager.myPeerId : UUID(), name: "Cho", avatar: "spaceship-yellow")
     let karen = Player(id: asHost ? UUID() : store.networkManager.myPeerId, name: "Karen", avatar: "spaceship-blue")
 
-    var room = Room(name: "Cho's Room", hostID: cho.id, players: [cho, karen])
+    var room = Room(name: "Cho's Room", hostID: cho.id, joinedPlayers: [cho, karen])
     room.isPlaying = true
+    room.inGamePlayers = [cho, karen]
     store.currRoom = room
 
     store.playerGameDataList = [
