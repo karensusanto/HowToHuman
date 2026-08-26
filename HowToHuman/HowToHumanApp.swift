@@ -32,11 +32,17 @@ struct HowToHumanApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(store).environmentObject(motionManager)
+                .onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)) { _ in
+                    print("App is being removed from running apps! Saving data...")
+                    if store.currRoom != nil {
+                        store.disconnectGracefully()
+                    }
+                }
                 .onChange(of: scenePhase) { oldPhase, newPhase in
-                    if newPhase == .inactive {
-                        if store.currRoom != nil {
-                            store.disconnectGracefully()
-                        }
+                    if newPhase == .background {
+                        store.disconnectGracefully()
+//                        store.stopSong()
+//                        store.stopOnboardingSong()
                     }
                 }
         }

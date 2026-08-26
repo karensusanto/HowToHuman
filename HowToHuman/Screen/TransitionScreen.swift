@@ -119,21 +119,26 @@ struct TransitionScreen: View {
                 
             }.padding()
             .onAppear{
+                store.stopOnboardingSong()
                 print("TransitionScreen appeared - state:", store.state, "phase:", store.phase, "instructions found:", instructions[store.phase] != nil)
                 startSequencedAnimation()
-                switch store.phase {
-                case .none:
-                    store.initAudioPlayer(sound: "(ONBOARDING)")
-                case .askHuman:
+                if store.currRoom?.hostID == store.myPlayerData.id {
+                    store.startAssigningQuestions()
+                }
+                switch store.state {
+                case .transitionToAskHuman:
                     store.initAudioPlayer(sound: "(ASK)")
-                case .answerAlien:
+                case .transitionToGuideAliens:
+//                    store.startAssigningQuestions()
                     store.initAudioPlayer(sound: "(GUIDE)")
-                case .narrateExperience:
+                case .transitionToNarrateExperience:
                     store.initAudioPlayer(sound: "(FOLLOW)")
-                case .shareExperience:
+                case .transitionToShareExperience:
                     store.initAudioPlayer(sound: "(READING)")
-                case .voting:
+                case .transitionToVoting:
                     store.initAudioPlayer(sound: "(VOTE)")
+                default:
+                    store.initAudioPlayer(sound: "(ASK)")
                 }
                 
             }

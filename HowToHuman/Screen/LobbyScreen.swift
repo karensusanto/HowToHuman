@@ -99,6 +99,7 @@ struct playersView: View {
                 }
             }
             .onAppear{
+                store.playOnboardingSong()
                 updatePositions(
                     players: store.currRoom?.joinedPlayers ?? [],
                     size: geo.size
@@ -147,7 +148,7 @@ struct LobbyScreen: View {
     @EnvironmentObject var store: GameStore
     @State var listOfPlayersAvatars: [String] = []
     @State private var positions: [UUID: PlayerPosition] = [:]
-    @State var selectedPlayer: Player = Player(id: UUID(), name: "", avatar: "")
+    @State var selectedPlayer: Player = Player(id: UUID(), name: "", avatar: "", human: "human-girl")
     
     var body: some View {
         ZStack{

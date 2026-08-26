@@ -39,7 +39,15 @@ struct DisplayScreen: View {
         return player.name
     }
     
-    private let human = HumanAvatar.allCases.randomElement() ?? "human-girl"
+    private var currentPlayerHuman: String {
+        guard let data = currentGameData,
+              let player = store.currRoom?.inGamePlayers.first(where: { $0.id == data.id }) else {
+            return "A Fellow Alien"
+        }
+        return player.human
+    }
+    
+//    private let human = HumanAvatar.allCases.randomElement() ?? "human-girl"
 
     var body: some View {
         ZStack {
@@ -167,7 +175,7 @@ private extension DisplayScreen {
             .frame(maxWidth: .infinity)
             .speechBubbleStyle(purpleGlow)
 
-            Image(human)
+            Image(currentPlayerHuman)
                 .resizable()
                 .scaledToFit()
                 .frame(width: 130)
@@ -348,8 +356,8 @@ private func previewStore(asHost: Bool, showingLastExperience: Bool = false) -> 
 
     // "self" must share networkManager.myPeerId, same as the real GameStore.init does,
     // or identity checks like sendReaction's host/participant branch pick the wrong path.
-    let cho = Player(id: asHost ? store.networkManager.myPeerId : UUID(), name: "Cho", avatar: "spaceship-yellow")
-    let karen = Player(id: asHost ? UUID() : store.networkManager.myPeerId, name: "Karen", avatar: "spaceship-blue")
+    let cho = Player(id: asHost ? store.networkManager.myPeerId : UUID(), name: "Cho", avatar: "spaceship-yellow", human: "human-girl")
+    let karen = Player(id: asHost ? UUID() : store.networkManager.myPeerId, name: "Karen", avatar: "spaceship-blue", human: "human-girl")
 
     var room = Room(name: "Cho's Room", hostID: cho.id, joinedPlayers: [cho, karen])
     room.isPlaying = true

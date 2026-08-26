@@ -31,6 +31,8 @@ enum MessageType: Codable{
     case readiness
     case vote
     case returnToLobby
+    case ping
+    case pong
 }
 
 struct MessageEnvelope: Codable{
@@ -46,6 +48,11 @@ struct PlayerGameData: Codable, Sendable{
     var vote: Float?
 }
 
+struct ReadyStatus: Codable, Sendable {
+    var isReady: Bool
+    var playerid: UUID
+}
+
 struct SharedGameData: Codable, Sendable {
     var gamePhase: GamePhase
     var gameState: AppState
@@ -57,6 +64,7 @@ struct SharedGameData: Codable, Sendable {
     var assignedQuestionPlayerId: UUID?
     var currentExperienceIndex: Int = 0
     var experienceRevealed: Bool = false
+    var readyPlayers: [UUID : Bool]
 }
 
 struct JoinRequest: Codable, Sendable {

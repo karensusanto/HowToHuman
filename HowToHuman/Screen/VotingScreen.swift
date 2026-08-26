@@ -148,7 +148,7 @@ private func previewVotingStore(playerCount: Int, votedCount: Int) -> GameStore 
     let names = ["Cho", "Karen", "Baeni", "Satria", "Wais", "Barra"]
     let avatars = AlienAvatar.allCases
     let players = (0..<playerCount).map { index in
-        Player(id: UUID(), name: names[index % names.count], avatar: avatars[index % avatars.count])
+        Player(id: UUID(), name: names[index % names.count], avatar: avatars[index % avatars.count], human: "human-girl")
     }
 
     store.currRoom = Room(name: "Cho's Room", hostID: players[0].id, joinedPlayers: players)
