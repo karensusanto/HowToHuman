@@ -11,6 +11,7 @@ struct Player: Codable {
     let id: UUID
     var name: String
     var avatar: String
+    var human: String
 }
 
 //extension Player {

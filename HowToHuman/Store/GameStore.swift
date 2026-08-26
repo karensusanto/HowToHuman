@@ -39,7 +39,7 @@ final class GameStore: ObservableObject {
     @Published var receivedGameData: PlayerGameData?
     @Published var bubbles: [Bubble] = []
     
-    @Published var readyPlayers: Int = 0
+    @Published var readyPlayers: [UUID : Bool] = [:]
     @Published var submittedQuestions: Int = 0
 
     @Published var currentExperienceIndex: Int = 0
@@ -52,6 +52,10 @@ final class GameStore: ObservableObject {
     private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
     let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
     private var onboardingSongPlaying: Bool = false
+    private var gameSongPlaying: Bool = false
+    
+    private var timer: DispatchSourceTimer?
+    private let queue = DispatchQueue(label: "com.app.networkQueue")
     
     init(motionManager: MotionManager) {
         self.networkManager = NetworkManager()
@@ -66,7 +70,7 @@ final class GameStore: ObservableObject {
             vote: nil
         )
         
-        myPlayerData = Player(id: networkManager.myPeerId, name: "", avatar: "spaceship-yellow")
+        myPlayerData = Player(id: networkManager.myPeerId, name: "", avatar: "spaceship-yellow", human: HumanAvatar.allCases.randomElement() ?? "human-girl")
         
         networkManager.onJoinRequest = { [weak self] request, connection in
             
@@ -119,9 +123,9 @@ final class GameStore: ObservableObject {
             }
         }
         
-        networkManager.onReceiveReady = { [weak self] readiness in
+        networkManager.onReceiveReady = { [weak self] playerid, readiness in
             Task { @MainActor in
-                self?.handleReadiness(readiness: readiness)
+                self?.handleReadiness(playerID: playerid, readiness: readiness)
             }
         }
 
@@ -140,65 +144,121 @@ final class GameStore: ObservableObject {
                 self?.next()
             }
         }
+        
+//        networkManager.onDisconnectedPlayer = { [weak self] conn in
+//            Task { @MainActor in
+//                self?.handleDisconnectedPlayer(conn)
+//            }
+//        }
+//        networkManager.onDisconnectedHost = { [weak self] in
+//            Task { @MainActor in
+//                self?.handleDisconnectedHost()
+//            }
+//        }
+//        networkManager.onReceivePing = { [weak self] conn in
+//            Task { @MainActor in
+//                self?.handlePing(conn)
+//            }
+//        }
+//        networkManager.onReceivePong = { [weak self] conn in
+//            Task { @MainActor in
+//                self?.handlePong(conn)
+//            }
+//        }
     }
-    
-    func initAudioPlayer(sound: String) {
-        guard let url = Bundle.main.url(forResource: sound, withExtension: "mp3") else { return }
-        print("init audio player")
-        soundPlayer = try? AVAudioPlayer(contentsOf: url)
-        soundPlayer?.prepareToPlay()
-    }
-    func initOnboardingAudioPlayer() {
-        guard let url = Bundle.main.url(forResource: "(ONBOARDING)", withExtension: "mp3") else { return }
-        print("init audio player")
-        onboardingSoundPlayer = try? AVAudioPlayer(contentsOf: url)
-        onboardingSoundPlayer?.prepareToPlay()
-    }
-    func initChimeAudioPlayer() {
-        guard let url = Bundle.main.url(forResource: "chime", withExtension: "mp3") else { return }
-        print("init chime audio player")
-        chimeSoundPlayer = try? AVAudioPlayer(contentsOf: url)
-        chimeSoundPlayer?.prepareToPlay()
-    }
-    func initButtonAudioPlayer() {
-        guard let url = Bundle.main.url(forResource: "ready", withExtension: "wav") else { return }
-        print("init button audio player")
-        buttonSoundPlayer = try? AVAudioPlayer(contentsOf: url)
-        buttonSoundPlayer?.prepareToPlay()
-    }
-    func playChime() {
-        chimeSoundPlayer?.currentTime = 0
-        chimeSoundPlayer?.play()
-    }
-    func playButtonSound() {
-        buttonSoundPlayer?.currentTime = 0
-        buttonSoundPlayer?.play()
-    }
-    func playSong() {
-        soundPlayer?.numberOfLoops = -1
-        soundPlayer?.currentTime = 0
-        soundPlayer?.play()
-    }
-    func stopSong(){
-        soundPlayer?.stop()
-        soundPlayer?.currentTime = 0
-    }
-    func playOnboardingSong() {
-        if !onboardingSongPlaying{
-            onboardingSoundPlayer?.numberOfLoops = -1
-            onboardingSoundPlayer?.currentTime = 0
-            onboardingSoundPlayer?.play()
-            onboardingSongPlaying = true
-        }
-    }
-    func stopOnboardingSong(){
-        onboardingSoundPlayer?.stop()
-        onboardingSoundPlayer?.currentTime = 0
-        onboardingSongPlaying = false
-    }
-    func vibrate(){
-        AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
-    }
+//    func startScheduling() {
+//            // Create timer bound to the network queue
+//        timer = DispatchSource.makeTimerSource(queue: queue)
+//        
+//        // Schedule to start immediately and repeat every 5 seconds
+//        timer?.schedule(deadline: .now(), repeating: .seconds(5))
+//        
+//        timer?.setEventHandler { [weak self] in
+//            guard let self = self else { return }
+//                
+//                if let connection = self.connectionToHost {
+//                    self.sendPing(connection)
+//                } else {
+//                    // 2. Loop through your connections
+//                    for (playerid, conn) in self.currentConnections {
+//                        // 3. Use guard to skip ready players safely
+//                        guard self.readyPlayers[playerid] == nil else {
+//                            continue
+//                        }
+//                        guard self.readyPlayers[playerid] == false else {
+//                            continue
+//                        }
+//                        
+//                        self.sendPing(conn)
+//                    }
+//                }
+//        }
+//        
+//        timer?.resume()
+//    }
+//    
+//    func stopScheduling() {
+//        // 1. Cancel the timer source to stop future executions
+//        timer?.cancel()
+//        
+//        // 2. Clear the reference to free memory
+//        timer = nil
+//        
+//        print("Timer stopped.")
+//    }
+//    
+//    func handlePing(_ connection: NWConnection){
+////        sendPong(connection)
+//    }
+//    func handlePong(_ connection: NWConnection){
+//        sendPing(connection)
+//    }
+//    func sendPing(_ connection: NWConnection){
+//        do{
+//            let pingdata = "Ping".data(using: .utf8)!
+//            let pingenvelopedData = try JSONEncoder().encode(MessageEnvelope(type: .ping, data: pingdata))
+//            networkManager.send(data: pingenvelopedData, over: connection, errMsg: "Send ping failed")
+//        }catch{
+//            print("Encoding failed: ", error)
+//        }
+//    }
+//    func sendPong(_ connection: NWConnection){
+//        do{
+//            let pingdata = "Pong".data(using: .utf8)!
+//            let pingenvelopedData = try JSONEncoder().encode(MessageEnvelope(type: .pong, data: pingdata))
+//            networkManager.send(data: pingenvelopedData, over: connection, errMsg: "Send pong failed")
+//        }catch{
+//            print("Encoding failed: ", error)
+//        }
+//    }
+//    
+//    func handleDisconnectedPlayer(_ connection: NWConnection){
+//        guard let playerID = currentConnections.first(where: { $0.value === connection })?.key else {
+//            print("⚠️ Connection not found, have been cleaned from currentConnections")
+//            return
+//        }
+//        guard let playerData = currRoom?.joinedPlayers.first(where: {$0.id == playerID}) else {
+//            print("⚠️ Player not found")
+//            return
+//        }
+//        print("handling disconnected player as leave request")
+//        handleLeaveRequest(playerData, connection: connection)
+//    }
+//    
+//    func handleDisconnectedHost(){
+//        print("⚠️ Host disconnected")
+//        if phase == .askHuman {
+//            playerGameDataList.removeAll(where: { $0.id == currRoom?.hostID })
+//        }
+//        readyPlayers.removeValue(forKey: currRoom!.hostID)
+//        currRoom?.changeHost()
+//        if currRoom?.hostID == myPlayerData.id{
+//            receiveHostship()
+//        }
+//        else{
+//            findNewHost()
+//        }
+//    }
     
     func join(){
         networkManager.join(room: joiningRoom!, player: myPlayerData)
@@ -230,20 +290,18 @@ final class GameStore: ObservableObject {
         }
     }
     
-    func handleReadiness(readiness: String){
-        if readiness == "Ready" {
-            readyPlayers += 1
+    func handleReadiness(playerID: UUID, readiness: Bool){
+
+        if readiness{
+            readyPlayers[playerID] = true
+        }else{
+            readyPlayers[playerID] = false
         }
-        else{
-            readyPlayers -= 1
-        }
+        
         // ReadyButton only appears on askHuman/answerAlien/narrateExperience - a "Ready" message
         // delayed by network latency can arrive after the host already moved past that phase
         // (e.g. its own timer fired first), and would otherwise trigger an unrelated next() call
-        guard [GamePhase.askHuman, .answerAlien, .narrateExperience].contains(phase) else { return }
-        if readyPlayers == currRoom!.inGamePlayers.count{
-            next()
-        }
+        checkReadiness()
     }
 
     // host-only: records one player's vote and, once everyone who's still in the room has voted, resolves it
@@ -311,7 +369,8 @@ final class GameStore: ObservableObject {
             submittedQuestions = 0
         }
         state = state.next
-        readyPlayers = 0
+        
+        readyPlayers.removeAll()
         print("next() -> phase:", phase, "state:", state, "inGamePlayers:", currRoom?.inGamePlayers.count ?? -1)
         shareGameData(voteResult: voteResult, questionAssignmentList: questionAssignmentList)
     }
@@ -344,7 +403,9 @@ final class GameStore: ObservableObject {
                 let data = try JSONEncoder().encode(JoinResponse.readmitted)
                 let envelopedData = try JSONEncoder().encode(MessageEnvelope(type: .joinResponse, data: data))
                 
-                networkManager.send(data: envelopedData, over: connection, errMsg: "Send join response failed")
+                networkManager.send(data: envelopedData, over: connection, errMsg: "Send join response failed"){
+                    self.shareGameData()
+                }
                 
             }catch {
                 print("Encoding failed: ", error)
@@ -371,6 +432,7 @@ final class GameStore: ObservableObject {
             let data = try JSONEncoder().encode(JoinResponse.accepted)
             let envelopedData = try JSONEncoder().encode(MessageEnvelope(type: .joinResponse, data: data))
             networkManager.send(data: envelopedData, over: connection, errMsg: "Send join response failed")
+//            sendPing(connection)
             
         }catch {
             print("Encoding failed: ", error)
@@ -384,6 +446,13 @@ final class GameStore: ObservableObject {
         networkManager.updateRoomAdvertisement(room: currRoom!)
         // send game data
         shareGameData()
+    }
+    
+    func checkReadiness(){
+        guard [GamePhase.askHuman, .answerAlien, .narrateExperience].contains(phase) else { return }
+        if readyPlayers.count == currRoom!.inGamePlayers.count && readyPlayers.filter({!$0.value}).count == 0{
+            next()
+        }
     }
     
     func handleJoinResponse(_ response: JoinResponse, connection: NWConnection){
@@ -410,32 +479,46 @@ final class GameStore: ObservableObject {
     func handleLeaveRequest(_ leavingPlayer: Player, connection: NWConnection){
         // delete game if still in asking phase
         print("Handling Player Leave Request")
-        if phase == .askHuman {
+        if state == .askHuman {
             playerGameDataList.removeAll(where: { $0.id == leavingPlayer.id })
         }
         currRoom!.removePlayer(id: leavingPlayer.id)
         startOrStopListeningToOne(on: connection, stop: true)
         currentConnections.removeValue(forKey: leavingPlayer.id)
+        readyPlayers.removeValue(forKey: leavingPlayer.id)
         
         if currRoom?.inGamePlayers.count == 1 && phase != .none{ // game started, only host left in the game
             clearGame(stopAdvertising: false)
         }
         networkManager.updateRoomAdvertisement(room: currRoom!)
         shareGameData()
+        checkReadiness()
     }
     
     func handleSharedData(_ sharedData: SharedGameData, connection: NWConnection){
         print("Handling Received Shared Data - incoming phase:", sharedData.gamePhase, "state:", sharedData.gameState, "| local phase:", phase, "state:", state)
+        print("========== RECEIVED SHARED DATA ==========")
+        print("My ID:", networkManager.myPeerId)
+        print("Incoming host:", sharedData.room.hostID)
+        print("Joined:",
+              sharedData.room.joinedPlayers.map(\.id))
+        print("In game:",
+              sharedData.room.inGamePlayers.map(\.id))
+        print("Incoming state:", sharedData.gameState)
+        print("Incoming phase:", sharedData.gamePhase)
+        print("==========================================")
         self.currRoom = sharedData.room
         if phase != sharedData.gamePhase {//changed phase
             self.phase = sharedData.gamePhase
-            if self.state != sharedData.gameState {self.state = state.next} //in case player already go to the next page first before host (players' timer are not in sync)
+            if self.state != sharedData.gameState {self.state = sharedData.gameState} //in case player already go to the next page first before host (players' timer are not in sync)
         }
         if state != sharedData.gameState {//changed state
             self.state = sharedData.gameState
+//            stopScheduling()
         }
         print("Handling Received Shared Data - resolved phase:", phase, "state:", state)
         
+        self.readyPlayers = sharedData.readyPlayers
         self.playerGameDataList = sharedData.playerGameDataList
         self.currentExperienceIndex = sharedData.currentExperienceIndex
         self.experienceRevealed = sharedData.experienceRevealed
@@ -451,41 +534,62 @@ final class GameStore: ObservableObject {
         print("Migrate host: ", sharedData.migrateHost)
         print("New host? ", sharedData.room.hostID == networkManager.myPeerId)
         if sharedData.migrateHost == true && currRoom!.hostID == networkManager.myPeerId {
-            print("Stop connection with previous host")
-            connection.cancel() // cancel the connection with previous host
-            connectionToHost = nil
-            
-            if currRoom?.inGamePlayers.count == 1{// if hostship transfer happens in the middle of the game, leaving only the new host as the only player in the game
-                clearGame(stopAdvertising: false, newHost: true) // game stopped, back to room's lobby as the new host
-            }
-            print("Receive hostship, begin advertising")
-            networkManager.startAdvertising(room: currRoom!)
+            receiveHostship()
         }
         if sharedData.connectToNewHost{
-            networkManager.startBrowsing(){rooms in
-                self.availableRooms = rooms
-                for r in self.availableRooms{
-                    if r.hostID == sharedData.room.hostID{// found connection advertised by the new host
-                        print("Found new host")
-                        self.networkManager.stopBrowsing()
-                        print("Stop connection with previous host")
-                        connection.cancel() // cancel the connection with previous host
-                        self.connectionToHost = nil
-                        self.networkManager.join(room: r, player: self.myPlayerData)
-                        
-                        break
-                    }
+            findNewHost()
+        }
+    }
+    
+    func receiveHostship(){
+        print("========== RECEIVING HOSTSHIP ==========")
+        print("My ID:", networkManager.myPeerId)
+        print("Host ID:", currRoom?.hostID as Any)
+        print("Joined players:",
+              currRoom?.joinedPlayers.map(\.id) ?? [])
+        print("In-game players:",
+              currRoom?.inGamePlayers.map(\.id) ?? [])
+        print("Current state:", state)
+        print("Current phase:", phase)
+        print("========================================")
+        
+        print("Stop connection with previous host")
+        connectionToHost?.cancel() // cancel the connection with previous host
+        connectionToHost = nil
+        submitGameData(data: myGameData)
+        currRoom?.joinedPlayers.removeAll()
+        currRoom?.joinedPlayers.append(myPlayerData)
+        if currRoom?.inGamePlayers.count == 1{// if hostship transfer happens in the middle of the game, leaving only the new host as the only player in the game
+            clearGame(stopAdvertising: false, newHost: true) // game stopped, back to room's lobby as the new host
+        }
+        print("Receive hostship, begin advertising")
+        networkManager.startAdvertising(room: currRoom!)
+    }
+    
+    func findNewHost(){
+        networkManager.startBrowsing(){ [self]rooms in
+            self.availableRooms = rooms
+            for r in self.availableRooms{
+                if r.hostID == currRoom?.hostID{// found connection advertised by the new host
+                    print("Found new host")
+                    self.networkManager.stopBrowsing()
+                    print("Stop connection with previous host")
+                    connectionToHost?.cancel() // cancel the connection with previous host
+                    self.connectionToHost = nil
+                    self.networkManager.join(room: r, player: self.myPlayerData)
+                    
+                    break
                 }
             }
         }
-        
     }
     
     func handlePlayerGameData(_ gameData: PlayerGameData, connection: NWConnection){
         if let index = playerGameDataList.firstIndex(where: { $0.id == gameData.id }) {
+            if playerGameDataList[index].question == nil && gameData.question != nil{
+                submittedQuestions += 1
+            }
             playerGameDataList[index] = gameData
-            
-            submittedQuestions += 1
         }
         
         // once all players submitted, shuffle questions so each player receive other player's game data
@@ -493,7 +597,13 @@ final class GameStore: ObservableObject {
     }
     
     func startAssigningQuestions(){
-        if submittedQuestions == currRoom?.inGamePlayers.count ?? 0 && receivedGameData == nil{
+        print("assigning questions function")
+        let submmittedQuestions = playerGameDataList.filter({ $0.question != nil }).count
+        let amountofPlayers = currRoom?.inGamePlayers.count
+        print("submitted questions: ", submmittedQuestions)
+        print("players: \(amountofPlayers ?? 0)")
+        if (submittedQuestions == amountofPlayers || phase == .askHuman && state == .transitionToGuideAliens) && receivedGameData == nil{
+            print("Start assigning question")
             let assignmentList = assignQuestions()
             if let myAssignedID = assignmentList[myPlayerData.id]{
                 print("Host assigned a question")
@@ -531,7 +641,7 @@ final class GameStore: ObservableObject {
         
         let inGamePlayerIds = currRoom?.inGamePlayers.map(\.id) ?? []
         var sharedData = SharedGameData(
-            gamePhase: .none, gameState: .lobby, room: currRoom!, voteResult: self.voteResult, playerGameDataList: playerGameDataList, migrateHost: migrateHost, connectToNewHost: connectToNewHost, currentExperienceIndex: currentExperienceIndex, experienceRevealed: experienceRevealed
+            gamePhase: .none, gameState: .lobby, room: currRoom!, voteResult: self.voteResult, playerGameDataList: playerGameDataList, migrateHost: migrateHost, connectToNewHost: connectToNewHost, currentExperienceIndex: currentExperienceIndex, experienceRevealed: experienceRevealed, readyPlayers: readyPlayers
         )
         if inGamePlayerIds.contains(playerId){
             sharedData.gamePhase = phase
@@ -556,7 +666,7 @@ final class GameStore: ObservableObject {
         let inGamePlayerIds = currRoom?.inGamePlayers.map(\.id) ?? []
         for (playerId, con) in currentConnections { // send updated shared data to all players
             var sharedData = SharedGameData(
-                gamePhase: .none, gameState: .lobby, room: currRoom!, voteResult: self.voteResult, playerGameDataList: playerGameDataList, migrateHost: migrateHost, connectToNewHost: connectToNewHost, currentExperienceIndex: currentExperienceIndex, experienceRevealed: experienceRevealed
+                gamePhase: .none, gameState: .lobby, room: currRoom!, voteResult: self.voteResult, playerGameDataList: playerGameDataList, migrateHost: migrateHost, connectToNewHost: connectToNewHost, currentExperienceIndex: currentExperienceIndex, experienceRevealed: experienceRevealed, readyPlayers: readyPlayers
             )
             
             if inGamePlayerIds.contains(playerId){
@@ -641,11 +751,12 @@ final class GameStore: ObservableObject {
         self.myGameData.vote = nil
         self.playerGameDataList.append(myGameData)
         self.receivedGameData = nil
-        self.readyPlayers = 0
+        self.readyPlayers.removeAll()
         self.submittedQuestions = 0
         self.currentExperienceIndex = 0
         self.experienceRevealed = false
         stopSong()
+        stopOnboardingSong()
         if stopAdvertising{
             networkManager.stop()
         }
@@ -713,11 +824,12 @@ final class GameStore: ObservableObject {
             let data = try JSONEncoder().encode(player)
             let envelopedData = try JSONEncoder().encode(MessageEnvelope(type: .leaveNotice, data: data))
             
-            networkManager.send(data: envelopedData, over: connection, errMsg: "Send leave room message failed")
+            networkManager.send(data: envelopedData, over: connection, errMsg: "Send leave room message failed"){
+                completion()
+            }
         }catch{
             print("Encoding failed:", error)
         }
-        completion()
     }
     
     func kickPlayer(_ player: Player){
@@ -738,19 +850,18 @@ final class GameStore: ObservableObject {
     func sendReadyStatus(_ ready: Bool){
         if connectionToHost == nil{
             if ready {
-                readyPlayers += 1
+                readyPlayers[myGameData.id] = true
             }else{
-                readyPlayers -= 1
+                readyPlayers[myGameData.id] = false
             }
             
-            if readyPlayers == currRoom!.inGamePlayers.count{
+            if readyPlayers.count == currRoom!.inGamePlayers.count && readyPlayers.filter({!$0.value}).count == 0{
                 next()
             }
         }
         else{
             do{
-                let text = ready ? "Ready" : "Not Ready"
-                let data = text.data(using: .utf8)!
+                let data = try JSONEncoder().encode(ReadyStatus(isReady: ready, playerid: myGameData.id))
                 let envelopedData = try JSONEncoder().encode(MessageEnvelope(type: .readiness, data: data))
                 
                 networkManager.send(data: envelopedData, over: connectionToHost!, errMsg: "Send readiness status")
@@ -759,6 +870,13 @@ final class GameStore: ObservableObject {
                 print("Encoding failed: ", error)
             }
         }
+        
+//        if ready{
+//            startScheduling()
+//        }
+//        else{
+//            stopScheduling()
+//        }
     }
 
     func submitVote(yes: Bool){
@@ -812,5 +930,75 @@ final class GameStore: ObservableObject {
             }
         }
         return assignmentList
+    }
+}
+
+
+// AUDIO
+extension GameStore{
+    func initAudioPlayer(sound: String) {
+        guard let url = Bundle.main.url(forResource: sound, withExtension: "mp3") else { return }
+        print("init audio player")
+        soundPlayer = try? AVAudioPlayer(contentsOf: url)
+        soundPlayer?.prepareToPlay()
+    }
+    func initOnboardingAudioPlayer() {
+        guard let url = Bundle.main.url(forResource: "(ONBOARDING)", withExtension: "mp3") else { return }
+        print("init audio player")
+        onboardingSoundPlayer = try? AVAudioPlayer(contentsOf: url)
+        onboardingSoundPlayer?.prepareToPlay()
+    }
+    func initChimeAudioPlayer() {
+        guard let url = Bundle.main.url(forResource: "chime", withExtension: "mp3") else { return }
+        print("init chime audio player")
+        chimeSoundPlayer = try? AVAudioPlayer(contentsOf: url)
+        chimeSoundPlayer?.prepareToPlay()
+    }
+    func initButtonAudioPlayer() {
+        guard let url = Bundle.main.url(forResource: "ready", withExtension: "wav") else { return }
+        print("init button audio player")
+        buttonSoundPlayer = try? AVAudioPlayer(contentsOf: url)
+        buttonSoundPlayer?.prepareToPlay()
+    }
+    func playChime() {
+        chimeSoundPlayer?.currentTime = 0
+        chimeSoundPlayer?.play()
+    }
+    func playButtonSound() {
+        buttonSoundPlayer?.currentTime = 0
+        buttonSoundPlayer?.play()
+    }
+    func playSong() {
+        if !gameSongPlaying{
+            soundPlayer?.numberOfLoops = -1
+            soundPlayer?.currentTime = 0
+            soundPlayer?.play()
+            gameSongPlaying = true
+        }
+    }
+    func stopSong(){
+        if gameSongPlaying{
+            soundPlayer?.stop()
+            soundPlayer?.currentTime = 0
+            gameSongPlaying = false
+        }
+    }
+    func playOnboardingSong() {
+        if !onboardingSongPlaying{
+            onboardingSoundPlayer?.numberOfLoops = -1
+            onboardingSoundPlayer?.currentTime = 0
+            onboardingSoundPlayer?.play()
+            onboardingSongPlaying = true
+        }
+    }
+    func stopOnboardingSong(){
+        if onboardingSongPlaying{
+            onboardingSoundPlayer?.stop()
+            onboardingSoundPlayer?.currentTime = 0
+            onboardingSongPlaying = false
+        }
+    }
+    func vibrate(){
+        AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
     }
 }

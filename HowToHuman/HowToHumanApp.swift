@@ -40,9 +40,9 @@ struct HowToHumanApp: App {
                 }
                 .onChange(of: scenePhase) { oldPhase, newPhase in
                     if newPhase == .background {
-                        if store.currRoom != nil {
-                            store.disconnectGracefully()
-                        }
+                        store.disconnectGracefully()
+//                        store.stopSong()
+//                        store.stopOnboardingSong()
                     }
                 }
         }

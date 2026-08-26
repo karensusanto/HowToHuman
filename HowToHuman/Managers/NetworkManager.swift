@@ -20,15 +20,20 @@ class NetworkManager: ObservableObject{
     var discoveredRooms: [String] = []
     
     var onJoinRequest: ((JoinRequest, NWConnection) -> Void)?
-    
     var onJoinResponse: ((JoinResponse, NWConnection) -> Void)?
     var onReceiveSharedData: ((SharedGameData, NWConnection) -> Void)?
     var onLeaveRequest: ((Player, NWConnection) -> Void)?
     var onReceivePlayerGameData: ((PlayerGameData, NWConnection) -> Void)?
     var onReceiveReaction: ((Bubble, NWConnection) -> Void)?
-    var onReceiveReady: ((String) -> Void)?
+    var onReceiveReady: ((UUID, Bool) -> Void)?
     var onReceiveVote: ((PlayerGameData) -> Void)?
     var onReceiveReturnToLobby: (() -> Void)?
+    
+    var onDisconnectedPlayer: ((NWConnection) -> Void)?
+    var onDisconnectedHost: (() -> Void)?
+    
+    var onReceivePing: ((NWConnection) -> Void)?
+    var onReceivePong: ((NWConnection) -> Void)?
     
     func startAdvertising(room : Room) {
         do {
@@ -78,9 +83,11 @@ class NetworkManager: ObservableObject{
 
                     case .failed(let error):
                         print("Connection failed:", error)
+                        self.onDisconnectedPlayer?(connection)
 
                     case .cancelled:
                         print("Guest disconnected")
+                        self.onDisconnectedPlayer?(connection)
 
                     default:
                         break
@@ -120,6 +127,7 @@ class NetworkManager: ObservableObject{
     
     func receive(on connection: NWConnection) {
         var type : MessageType = .none
+        
         connection.receive(
             minimumIncompleteLength: 1,
             maximumLength: 4096
@@ -213,9 +221,12 @@ class NetworkManager: ObservableObject{
                         self.onReceiveReaction?(bubble, connection)
                     case .readiness:
                         print("Received readiness status")
-                        let readiness = String(data: envelope.data, encoding: .utf8)!
+                        let readiness = try JSONDecoder().decode(
+                            ReadyStatus.self,
+                            from: envelope.data
+                        )
 
-                        self.onReceiveReady?(readiness)
+                        self.onReceiveReady?(readiness.playerid, readiness.isReady)
                     case .vote:
                         print("Received vote")
                         let voteData = try JSONDecoder().decode(
@@ -227,6 +238,12 @@ class NetworkManager: ObservableObject{
                     case .returnToLobby:
                         print("Received return-to-lobby request")
                         self.onReceiveReturnToLobby?()
+                    case .ping:
+                        print("Received ping")
+                        self.onReceivePing?(connection)
+                    case .pong:
+                        print("Received pong")
+                        self.onReceivePong?(connection)
                     }
                     
                     
@@ -257,6 +274,11 @@ class NetworkManager: ObservableObject{
                         print("Failed to decode vote.")
                     case .returnToLobby:
                         print("Failed to decode return-to-lobby request.")
+                    case .ping:
+                        print("Received ping")
+                    case .pong:
+                        print("Received pong")
+                    
                     }
                     
                 }
@@ -415,9 +437,11 @@ class NetworkManager: ObservableObject{
 
             case .failed(let error):
                 print("Connection failed:", error)
+                self.onDisconnectedHost?()
 
             case .cancelled:
                 print("Connection cancelled")
+                self.onDisconnectedHost?()
 
             default:
                 break

@@ -35,7 +35,6 @@ struct HumanInstructionScreen: View {
 
     @State private var assignmentList: [UUID: UUID] = [:]
     @State private var listHeight: CGFloat = 0
-    private let human = HumanAvatar.allCases.randomElement() ?? "human-girl"
     @FocusState private var isTextFieldFocused: Bool
     
     var body: some View {
@@ -52,7 +51,7 @@ struct HumanInstructionScreen: View {
 
                 questionPill
                 
-                Image(human)
+                Image(store.myPlayerData.human)
                     .resizable()
                     .scaledToFit()
                     .frame(width: 130)

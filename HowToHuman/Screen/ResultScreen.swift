@@ -264,9 +264,9 @@ private func previewResultStore(voteResult: Float?) -> GameStore {
     let motionManager = MotionManager()
     let store = GameStore(motionManager: motionManager)
 
-    let cho = Player(id: store.networkManager.myPeerId, name: "Cho", avatar: "spaceship-yellow")
-    let karen = Player(id: UUID(), name: "Karen", avatar: "spaceship-blue")
-    let baeni = Player(id: UUID(), name: "Baeni", avatar: "spaceship-pink")
+    let cho = Player(id: store.networkManager.myPeerId, name: "Cho", avatar: "spaceship-yellow", human: "human-girl")
+    let karen = Player(id: UUID(), name: "Karen", avatar: "spaceship-blue", human: "human-girl")
+    let baeni = Player(id: UUID(), name: "Baeni", avatar: "spaceship-pink", human: "human-girl")
 
     store.currRoom = Room(name: "Cho's Room", hostID: cho.id, joinedPlayers: [cho, karen, baeni])
     store.currRoom?.inGamePlayers = [cho, karen, baeni]
@@ -310,7 +310,7 @@ private func previewResultStore(voteResult: Float?) -> GameStore {
     let names = ["Cho", "Karen", "Baeni", "Satria", "Wais", "Barra"]
     let avatars = AlienAvatar.allCases
     let players = (0..<6).map { index in
-        Player(id: UUID(), name: names[index], avatar: avatars[index % avatars.count])
+        Player(id: UUID(), name: names[index], avatar: avatars[index % avatars.count], human: "human-girl")
     }
     store.currRoom?.joinedPlayers = players
     store.currRoom?.inGamePlayers = players

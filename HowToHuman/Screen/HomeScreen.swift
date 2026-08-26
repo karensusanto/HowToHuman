@@ -26,7 +26,7 @@ struct HomeScreen: View {
                         withAnimation(.easeInOut(duration: Double.random(in: 1.8...2.6)).repeatForever(autoreverses: true)) {
                             floating = true
                         }
-                        store.playSong()
+                        store.playOnboardingSong()
                     }
                     Image("HTHTitleText").resizable().scaledToFit()
                     
