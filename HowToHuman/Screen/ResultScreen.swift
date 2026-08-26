@@ -149,7 +149,6 @@ struct ResultScreen: View {
         }
         .onDisappear {
             player?.pause()
-            store.playSong()
         }
     }
 }

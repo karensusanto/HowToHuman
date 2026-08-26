@@ -174,6 +174,7 @@ final class GameStore: ObservableObject {
     func stopSong(){
         soundPlayer?.stop()
         soundPlayer?.currentTime = 0
+        initAudioPlayer(sound: "(ONBOARDING)")
     }
     func vibrate(){
         AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
@@ -624,6 +625,7 @@ final class GameStore: ObservableObject {
         self.submittedQuestions = 0
         self.currentExperienceIndex = 0
         self.experienceRevealed = false
+        stopSong()
         if stopAdvertising{
             networkManager.stop()
         }

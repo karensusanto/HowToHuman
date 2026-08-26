@@ -121,6 +121,7 @@ struct LobbySearchScreen: View {
             }.padding()
                 .onAppear {
                     store.startBrowsing()
+                    store.playSong()
                 }
                 .onDisappear {
                     store.networkManager.stopBrowsing()
