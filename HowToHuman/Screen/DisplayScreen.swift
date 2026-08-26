@@ -38,6 +38,8 @@ struct DisplayScreen: View {
         }
         return player.name
     }
+    
+    private let human = HumanAvatar.allCases.randomElement() ?? "human-girl"
 
     var body: some View {
         ZStack {
@@ -165,7 +167,7 @@ private extension DisplayScreen {
                 }
             }
 
-            Image("human")
+            Image(human)
                 .resizable()
                 .scaledToFit()
                 .frame(width: 130)
@@ -173,51 +175,49 @@ private extension DisplayScreen {
     }
 
     var narrationStage: some View {
-        VStack(spacing: 5) {
-            VStack(alignment: .trailing, spacing: 8) {
-                if isHost || transcriptRevealed {
-                    HTHText(title: LocalizedStringKey(currentGameData?.experience ?? "No experience shared"), font: HTHFont.space_grot, color: .black)
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                } else {
-                    HTHText(title: "Listen to your friends' experience.", font: HTHFont.space_grot, weight: .medium, color: .black)
-                        .multilineTextAlignment(.center)
-                }
+        VStack(spacing: 0) {
+            ZStack {
+                // baked-in rounded rect + tail, so the pointer is never visually detached from the bubble
+                Image("NarrationDisplayBubble")
+                    .resizable()
+                    .aspectRatio(370.0 / 296.0, contentMode: .fit)
 
-                HTHText(
-                    title: isHost ? "[Read it out loud]" : (transcriptRevealed ? "[tap to hide transcript]" : "[tap to reveal transcript]"),
-                    size: HTHSize.caption,
-                    font: HTHFont.space_grot,
-                    color: .black.opacity(0.6)
-                )
+                VStack(alignment: .trailing, spacing: 8) {
+                    if isHost || transcriptRevealed {
+                        HTHText(title: LocalizedStringKey(currentGameData?.experience ?? "No experience shared"), font: HTHFont.space_grot, color: .black)
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        HTHText(title: "Listen to your friends' experience.", font: HTHFont.space_grot, weight: .medium, color: .black)
+                            .multilineTextAlignment(.center)
+                    }
+
+                    HTHText(
+                        title: isHost ? "[Read it out loud]" : (transcriptRevealed ? "[tap to hide transcript]" : "[tap to reveal transcript]"),
+                        size: HTHSize.caption,
+                        font: HTHFont.space_grot,
+                        color: .black.opacity(0.6)
+                    )
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 20)
+                .padding(.bottom, 40) // clears the tail baked into the bottom of the bubble art
             }
-            .padding(20)
-            .frame(maxWidth: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.white)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.white, lineWidth: 2)
-                    .shadow(color: Color.white.opacity(0.8), radius: 10)
-            )
             .contentShape(Rectangle())
             .onTapGesture {
                 guard !isHost else { return }
                 withAnimation { transcriptRevealed.toggle() }
             }
 
-            Triangle()
-                .fill(Color.white)
-                .frame(width: 18, height: 10)
-
             // TEMP placeholder until custom art for the alien-in-UFO graphic is provided
-            Text("🛸")
-                .font(.system(size: 90))
+            Image("spaceship-purple")
+                .resizable()                        // 1. Allows the image to stretch/shrink
+                .scaledToFit()                      // 2. Scales proportionally to fit the container
+                .frame(width: 200, height: 200)
+
         }
     }
-
+    
     var pageIndicator: some View {
         HStack(spacing: 6) {
             Circle().frame(width: 7, height: 7)
@@ -233,6 +233,7 @@ private extension DisplayScreen {
             reactionButton("LOLAlienEmoji")
             reactionButton("LoveAlienEmoji")
             reactionButton("WowAlienEmoji")
+            reactionButton("MadAlienEmoji")
         }
     }
 
