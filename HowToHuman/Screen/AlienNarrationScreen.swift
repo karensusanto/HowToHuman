@@ -25,6 +25,7 @@ struct AlienNarrationScreen: View {
     @State var isReady: Bool = false
     
     @State private var narrationsLen : Int = 0
+    @FocusState private var isTextFieldFocused: Bool
 
     var body: some View {
         ZStack {
@@ -46,12 +47,7 @@ struct AlienNarrationScreen: View {
 
                 VStack{
                     narrationField
-                        .onTapGesture {
-                            if readyMsgSubmitted{
-                                store.sendReadyStatus(false)
-                                readyMsgSubmitted = false
-                            }
-                        }
+                        .focused($isTextFieldFocused)
                     
                     HTHText(title: "\(narrationsLen)/700", size: HTHSize.caption, color: Color.gray)
                 }
@@ -63,6 +59,9 @@ struct AlienNarrationScreen: View {
                 ReadyButton(readyMsgSubmitted: $readyMsgSubmitted, isReady: $isReady)
             }
             .padding()
+            .onTapGesture {
+                        isTextFieldFocused = false
+                    }
             
             VStack{
                 if store.showExitRoomPopUp{
@@ -88,6 +87,11 @@ struct AlienNarrationScreen: View {
         }
         .onChange(of: narrations){
             isReady = !narrations.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            
+            if readyMsgSubmitted{
+                store.sendReadyStatus(false)
+                readyMsgSubmitted = false
+            }
         }
         .onReceive(timer) { _ in
             guard timeRemaining > 0 else {

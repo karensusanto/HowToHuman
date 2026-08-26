@@ -36,6 +36,7 @@ struct HumanInstructionScreen: View {
     @State private var assignmentList: [UUID: UUID] = [:]
     @State private var listHeight: CGFloat = 0
     private let human = HumanAvatar.allCases.randomElement() ?? "human-girl"
+    @FocusState private var isTextFieldFocused: Bool
     
     var body: some View {
         ZStack {
@@ -63,6 +64,9 @@ struct HumanInstructionScreen: View {
                         ForEach(steps.indices, id: \.self) { index in
                             HStack{
                                 stepField(index: index)
+                                    .focused(
+                                        $isTextFieldFocused
+                                    )
                                 Button{
                                     deleteStep(index)
                                 }label:{
@@ -72,12 +76,6 @@ struct HumanInstructionScreen: View {
                             }
                         }
                         .listRowBackground(Color.clear)
-                        .onTapGesture {
-                            if readyMsgSubmitted{
-                                store.sendReadyStatus(false)
-                                readyMsgSubmitted = false
-                            }
-                        }
                         
                         if canAddStep {
                             addStepButton
@@ -93,6 +91,13 @@ struct HumanInstructionScreen: View {
                     }
                     
                 }
+                
+                .onTapGesture {
+                    if readyMsgSubmitted{
+                        store.sendReadyStatus(false)
+                        readyMsgSubmitted = false
+                    }
+                }
 
                 Spacer()
                 if readyMsgSubmitted{
@@ -101,6 +106,10 @@ struct HumanInstructionScreen: View {
                 ReadyButton(readyMsgSubmitted: $readyMsgSubmitted, isReady: $isReady)
             }
             .padding()
+            .contentShape(Rectangle()) 
+            .onTapGesture {
+                        isTextFieldFocused = false
+                    }
             
             VStack{
                 if store.showExitRoomPopUp{
@@ -130,6 +139,12 @@ struct HumanInstructionScreen: View {
         }
         .onChange(of: filledStepsCount){
             isReady = filledStepsCount > 0
+        }
+        .onChange(of: steps){
+            if readyMsgSubmitted{
+                store.sendReadyStatus(false)
+                readyMsgSubmitted = false
+            }
         }
         .onReceive(timer) { _ in
             guard timeRemaining > 0 else {

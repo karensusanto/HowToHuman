@@ -257,6 +257,9 @@ struct TimerSettingPopUp: View {
                 }
             }
             .padding()
+            .onAppear{
+                selectedTimerMode = store.currRoom?.timerMode ?? TimerMode.normal
+            }
         }
         .background(HTHGameBackground())
     }
