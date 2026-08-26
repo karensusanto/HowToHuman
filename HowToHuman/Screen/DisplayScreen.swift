@@ -38,6 +38,8 @@ struct DisplayScreen: View {
         }
         return player.name
     }
+    
+    private let human = HumanAvatar.allCases.randomElement() ?? "human-girl"
 
     var body: some View {
         ZStack {
@@ -139,8 +141,8 @@ private extension DisplayScreen {
     }
 
     var stepsStage: some View {
-        VStack(spacing: 16) {
-            VStack(spacing: 10) {
+        VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 10) {
                 ForEach(Array((currentGameData?.answer ?? []).enumerated()), id: \.offset) { index, step in
                     HStack(alignment: .top, spacing: 12) {
                         HTHText(title: "\(index + 1).", font: HTHFont.space_grot, weight: .medium, color: .black)
@@ -149,31 +151,28 @@ private extension DisplayScreen {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(14)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.white)
-                    )
                 }
 
                 if currentGameData?.answer?.isEmpty ?? true {
                     HTHText(title: "The human did not respond", font: HTHFont.space_grot, color: .black)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
+            .padding(20)
+            .padding(.bottom, 10) // extra room so text doesn't crowd the tail wedge baked into the shape below
+            .frame(maxWidth: .infinity)
+            .speechBubbleStyle(purpleGlow)
 
-            Image("human")
+            Image(human)
                 .resizable()
                 .scaledToFit()
                 .frame(width: 130)
+                .padding()
         }
     }
 
     var narrationStage: some View {
-        VStack(spacing: 5) {
+        VStack(spacing: 0) {
             VStack(alignment: .trailing, spacing: 8) {
                 if isHost || transcriptRevealed {
                     HTHText(title: LocalizedStringKey(currentGameData?.experience ?? "No experience shared"), font: HTHFont.space_grot, color: .black)
@@ -192,32 +191,24 @@ private extension DisplayScreen {
                 )
             }
             .padding(20)
+            .padding(.bottom, 10) // extra room so text doesn't crowd the tail wedge baked into the shape below
             .frame(maxWidth: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.white)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.white, lineWidth: 2)
-                    .shadow(color: Color.white.opacity(0.8), radius: 10)
-            )
+            .speechBubbleStyle(purpleGlow)
             .contentShape(Rectangle())
             .onTapGesture {
                 guard !isHost else { return }
                 withAnimation { transcriptRevealed.toggle() }
             }
 
-            Triangle()
-                .fill(Color.white)
-                .frame(width: 18, height: 10)
-
             // TEMP placeholder until custom art for the alien-in-UFO graphic is provided
-            Text("🛸")
-                .font(.system(size: 90))
+            Image("spaceship-purple")
+                .resizable()                        // 1. Allows the image to stretch/shrink
+                .scaledToFit()                      // 2. Scales proportionally to fit the container
+                .frame(width: 200, height: 200)
+
         }
     }
-
+    
     var pageIndicator: some View {
         HStack(spacing: 6) {
             Circle().frame(width: 7, height: 7)
@@ -233,6 +224,7 @@ private extension DisplayScreen {
             reactionButton("LOLAlienEmoji")
             reactionButton("LoveAlienEmoji")
             reactionButton("WowAlienEmoji")
+            reactionButton("MadAlienEmoji")
         }
     }
 
@@ -283,6 +275,64 @@ private extension DisplayScreen {
                 HTHText(title: "Wait for host to continue", font: HTHFont.space_grot)
             }
         }
+    }
+}
+
+// A rounded rect with a downward-pointing tail carved directly into the bottom edge, traced as
+// one continuous outline - so a stroke/shadow applied to it wraps the body and tail seamlessly,
+// unlike a separate RoundedRectangle + Triangle pair (which can show a gap or a mismatched border
+// where the two shapes meet).
+struct SpeechBubbleShape: Shape {
+    var cornerRadius: CGFloat = 16
+    var tailWidth: CGFloat = 22
+    var tailHeight: CGFloat = 14
+    // fraction of the width where the tail is centered
+    var tailPosition: CGFloat = 0.5
+
+    func path(in rect: CGRect) -> Path {
+        let r = min(cornerRadius, min(rect.width, rect.height - tailHeight) / 2)
+        let bodyMaxY = rect.maxY - tailHeight
+        let tailCenterX = rect.minX + rect.width * tailPosition
+        let tailLeftX = max(rect.minX + r, tailCenterX - tailWidth / 2)
+        let tailRightX = min(rect.maxX - r, tailCenterX + tailWidth / 2)
+
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX + r, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX - r, y: rect.minY))
+        path.addArc(center: CGPoint(x: rect.maxX - r, y: rect.minY + r), radius: r, startAngle: .degrees(-90), endAngle: .degrees(0), clockwise: false)
+        path.addLine(to: CGPoint(x: rect.maxX, y: bodyMaxY - r))
+        path.addArc(center: CGPoint(x: rect.maxX - r, y: bodyMaxY - r), radius: r, startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
+        path.addLine(to: CGPoint(x: tailRightX, y: bodyMaxY))
+        path.addLine(to: CGPoint(x: tailCenterX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: tailLeftX, y: bodyMaxY))
+        path.addLine(to: CGPoint(x: rect.minX + r, y: bodyMaxY))
+        path.addArc(center: CGPoint(x: rect.minX + r, y: bodyMaxY - r), radius: r, startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false)
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + r))
+        path.addArc(center: CGPoint(x: rect.minX + r, y: rect.minY + r), radius: r, startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
+        path.closeSubpath()
+        return path
+    }
+}
+
+private struct SpeechBubbleStyle: ViewModifier {
+    let glow: Color
+
+    func body(content: Content) -> some View {
+        content
+            .background(SpeechBubbleShape().fill(Color.white))
+            .overlay(
+                SpeechBubbleShape()
+                    .stroke(glow, lineWidth: 2.5)
+                    // stacked shadows (tight + wide) read as a punchier glow than one alone
+                    .shadow(color: glow.opacity(0.9), radius: 8)
+                    .shadow(color: glow.opacity(0.6), radius: 22)
+            )
+    }
+}
+
+private extension View {
+    func speechBubbleStyle(_ glow: Color) -> some View {
+        modifier(SpeechBubbleStyle(glow: glow))
     }
 }
 
