@@ -22,6 +22,7 @@ struct AlienQuestionScreen: View {
     
     @State var isReady: Bool = false
     @FocusState private var isTextFieldFocused: Bool
+    @State private var floating = false
     
     private var placeholderText: String {
         let typedChars = Array(answerText)
@@ -56,8 +57,15 @@ struct AlienQuestionScreen: View {
                         .scaledToFit()
                         .frame(width: 190, height: 120)
                         .padding(.top, 44)
+
                     
                     SpeechBubbleDots()
+                }
+                .offset(y: floating ? -5.0 : 5.0)
+                .onAppear{
+                    withAnimation(.easeInOut(duration: Double.random(in: 1.8...2.6)).repeatForever(autoreverses: true)) {
+                        floating = true
+                    }
                 }
                 
                 
