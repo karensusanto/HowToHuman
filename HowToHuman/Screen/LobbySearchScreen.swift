@@ -10,6 +10,7 @@ import SwiftUI
 struct OrbitView: View {
     @EnvironmentObject var store: GameStore
     @Binding var joinRoomPopUp: Bool
+    @State private var floating = false
     
     var body: some View {
         GeometryReader { geo in
@@ -81,6 +82,12 @@ struct OrbitView: View {
                             x: diameter / 2 + x + padding,
                             y: geo.size.height / 2 + y
                         )
+                        .offset(y: floating ? -5.0 : 5.0)
+                        .onAppear {
+                            withAnimation(.easeInOut(duration: Double.random(in: 1.8...2.6)).repeatForever(autoreverses: true)) {
+                                floating = true
+                            }
+                        }
                     }
                 }
             }

@@ -426,12 +426,16 @@ final class GameStore: ObservableObject {
         }
 
         currRoom!.joinedPlayers.append(request.player)
-        playerGameDataList.append(PlayerGameData(id: request.player.id))
+        if !playerGameDataList.contains(where: {$0.id == request.player.id}){
+            playerGameDataList.append(PlayerGameData(id: request.player.id))
+        }
 
         do{
             let data = try JSONEncoder().encode(JoinResponse.accepted)
             let envelopedData = try JSONEncoder().encode(MessageEnvelope(type: .joinResponse, data: data))
-            networkManager.send(data: envelopedData, over: connection, errMsg: "Send join response failed")
+            networkManager.send(data: envelopedData, over: connection, errMsg: "Send join response failed"){
+                self.shareGameData()
+            }
 //            sendPing(connection)
             
         }catch {
@@ -444,8 +448,6 @@ final class GameStore: ObservableObject {
         print("Start listening to newly connected player")
         startOrStopListeningToOne(on: connection, stop: false)
         networkManager.updateRoomAdvertisement(room: currRoom!)
-        // send game data
-        shareGameData()
     }
     
     func checkReadiness(){
@@ -463,7 +465,9 @@ final class GameStore: ObservableObject {
             print("Start listening to host")
             startOrStopListeningToOne(on: connectionToHost!, stop: false)
             joiningRoom = nil
-            state = .lobby
+            submitGameData(data: myGameData)
+            if receivedGameData != nil {submitGameData(data: receivedGameData!)}
+//            state = .lobby
         case .roomFull:
             showRoomFullPopUp = true
             state = .lobbySearch
