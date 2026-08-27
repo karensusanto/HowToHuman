@@ -65,6 +65,8 @@ struct Room: Identifiable, Codable, Sendable {
     var timerMode: TimerMode
     var maxPlayers: Int = 8
     var isPlaying: Bool = false
+//    var nextHostID: String?
+//    var nextHostName: String?
 
     init(id: UUID = UUID(), name: String, hostID: UUID, joinedPlayers: [Player], timerMode: TimerMode = .normal) {
         self.id = id
@@ -79,9 +81,16 @@ struct Room: Identifiable, Codable, Sendable {
     
     mutating func changeHost(){
         removePlayer(id: hostID)
-        let newHost = isPlaying ? inGamePlayers.first! : joinedPlayers.first!
-        self.hostID = newHost.id
-        self.roomName = "\(newHost.name)'s Satellite"
+//        if nextHostID != nil && nextHostName != nil{
+//            self.hostID = UUID(uuidString: nextHostID!)!
+//            self.roomName = "\(nextHostName!)'s Satellite"
+//            nextHostID = nil
+//            nextHostName = nil
+//        }
+        if let newHost = isPlaying ? inGamePlayers.first : joinedPlayers.first{
+            self.hostID = newHost.id
+            self.roomName = "\(newHost.name)'s Satellite"
+        }
     }
     
     mutating func removePlayer(id: UUID){
